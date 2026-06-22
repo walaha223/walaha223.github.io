@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Déploie le site WalahaTracker sur GitHub Pages (walaha.github.io)
+# Déploie le site WalahaTracker sur GitHub Pages (walaha223.github.io)
 set -euo pipefail
 
-REPO_URL="https://github.com/walaha223/walaha.github.io.git"
+REPO_URL="https://github.com/walaha223/walaha223.github.io.git"
+SITE_URL="https://walaha223.github.io/"
 BRANCH="main"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
@@ -54,4 +55,5 @@ git push -u origin "$BRANCH"
 
 echo ""
 echo "✓ Déployé sur $REPO_URL"
-echo "  GitHub Pages : https://walaha223.github.io/ (après activation dans les paramètres du dépôt)"
+echo "  GitHub Pages : $SITE_URL"
+echo "  Si besoin : Settings → Pages → Source : GitHub Actions"
