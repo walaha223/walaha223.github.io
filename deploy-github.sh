@@ -53,6 +53,26 @@ echo "→ git push -u origin $BRANCH"
 git push -u origin "$BRANCH"
 
 echo ""
+echo "→ Vérification GitHub Pages"
+if command -v gh &>/dev/null && gh auth status &>/dev/null; then
+  if gh api "repos/walaha223/walaha223.github.io/pages" >/dev/null 2>&1; then
+    echo "✓ GitHub Pages est déjà configuré."
+  else
+    echo "→ Activation GitHub Pages depuis main / (root)"
+    gh api \
+      --method POST \
+      "repos/walaha223/walaha223.github.io/pages" \
+      -F "source[branch]=$BRANCH" \
+      -F "source[path]=/" >/dev/null
+    echo "✓ GitHub Pages activé."
+  fi
+else
+  echo "ℹ GitHub CLI n'est pas connecté. Pour activer Pages depuis le terminal :"
+  echo "  gh auth login"
+  echo "  gh api --method POST repos/walaha223/walaha223.github.io/pages -F source[branch]=$BRANCH -F source[path]=/"
+fi
+
+echo ""
 echo "✓ Code poussé sur $REPO_URL"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
