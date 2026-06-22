@@ -25,6 +25,21 @@ chmod +x deploy-github.sh
 
 Le script initialise le dépôt (si besoin), commit les fichiers et pousse sur `https://github.com/walaha223/walaha.github.io.git`.
 
+### Activer GitHub Pages (une seule fois)
+
+1. Ouvrir [github.com/walaha223/walaha.github.io/settings/pages](https://github.com/walaha223/walaha.github.io/settings/pages)
+2. **Build and deployment** → Source : **GitHub Actions**
+3. Après le push, l’action « Deploy GitHub Pages » publie automatiquement le site
+
+### URL du site
+
+| URL | Statut |
+|-----|--------|
+| **https://walaha223.github.io/** | URL correcte (compte `walaha223`) |
+| https://walaha.github.io/ | Ne fonctionne pas — ce n’est pas le nom du compte GitHub |
+
+Pour utiliser un domaine personnalisé (ex. `walaha.ml`), ajoutez-le dans **Settings → Pages → Custom domain**.
+
 ## Captures de validation
 
 Pour les captures headless, activer la préférence `prefers-reduced-motion: reduce`.
