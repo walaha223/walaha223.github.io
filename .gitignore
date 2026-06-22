@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+
+# Captures brutes macOS (les versions recadrées sont conservées)
+screenshots/Screenshot *.png

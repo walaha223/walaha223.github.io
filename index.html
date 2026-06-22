@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <!-- Google tag (gtag.js) - Remplacer G-XXXXXXXXXX par l'identifiant GA4 réel. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag("js", new Date());
+      gtag("config", "G-XXXXXXXXXX");
+    </script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WalahaTracker — Suivi scolaire familial au Mali</title>
+    <meta name="description" content="WalahaTracker est une application mobile malienne qui aide les parents, les écoles et les répétiteurs à mieux suivre la scolarité des enfants.">
+    <meta name="keywords" content="WalahaTracker, suivi scolaire Mali, application scolaire Mali, école Mali, parents Mali, répétiteur Mali, bulletin scolaire, frais scolaires">
+    <meta property="og:title" content="WalahaTracker — Suivi scolaire familial au Mali">
+    <meta property="og:description" content="Une application mobile pour connecter parents, écoles et répétiteurs autour du suivi des élèves au Mali.">
+    <meta property="og:image" content="/assets/og-walahatracker.png">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="logos/logo-symbol.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#accueil" aria-label="WalahaTracker accueil">
+        <img src="logos/logo-symbol.png" alt="" width="36" height="64">
+        <span class="brand-name"><span class="brand-walaha">Walaha</span><span class="brand-tracker">Tracker</span></span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="sr-only">Ouvrir le menu</span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav id="site-nav" class="site-nav" aria-label="Navigation principale">
+        <a href="#accueil" data-nav>Accueil</a>
+        <a href="#fonctionnalites" data-nav>Fonctionnalités</a>
+        <a href="#apercu" data-nav>Aperçu</a>
+        <a href="#ecoles" data-nav>Écoles</a>
+        <a href="#parents" data-nav>Parents</a>
+        <a href="#repetiteurs" data-nav>Répétiteurs</a>
+        <a href="#beta" data-nav>Bêta</a>
+        <a href="#contact" data-nav>Contact</a>
+        <a class="btn btn-primary nav-cta" href="#contact" data-event="click_beta_button">Rejoindre la bêta</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="accueil" class="hero section">
+        <span class="blob blob-1" aria-hidden="true"></span>
+        <span class="blob blob-2" aria-hidden="true"></span>
+        <div class="container hero-grid">
+          <div class="hero-copy reveal">
+            <div class="badge-row">
+              <span class="badge warm"><span class="dot"></span>Version bêta ouverte</span>
+              <span class="badge"><span class="dot"></span>Conçu pour le Mali 🇲🇱</span>
+            </div>
+            <h1>Le suivi scolaire des enfants, enfin <span class="gradient-text">simple</span> pour les familles maliennes</h1>
+            <p class="lead">Bulletins, frais en FCFA, messages et suivi des enfants — tout dans une seule application mobile.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#contact" data-event="click_beta_button">
+                Rejoindre la bêta
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <a class="btn btn-secondary" href="#apercu">Voir l’application</a>
+            </div>
+            <div class="store-badges" aria-label="Bientôt disponible sur les stores">
+              <span class="store-badge" title="Bientôt sur l’App Store">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <span><small>Bientôt sur</small>App Store</span>
+              </span>
+              <span class="store-badge" title="Bientôt sur Google Play">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.18 23.76c.39.22.86.24 1.28.05l12.75-7.38L8.53 2.04C8.18 1.82 7.77 1.8 7.4 1.96c-.4.18-.65.58-.65 1.03v19.02c0 .45.25.85.43 1.05v.7zM20.16 10.81 16.57 8.73l-3.2 3.2 3.2 3.2 3.59-2.08c.68-.39.68-1.05 0-1.44zM5.75 2.66v18.68l9.38-9.34L5.75 2.66z"/></svg>
+                <span><small>Bientôt sur</small>Google Play</span>
+              </span>
+            </div>
+            <div class="hero-trust">
+              <div class="avatars" aria-hidden="true">
+                <span>MD</span><span>FC</span><span>AK</span><span>+</span>
+              </div>
+              <span><strong>12+ familles</strong> et <strong>2 écoles pilotes</strong> à Bamako et Tombouctou</span>
+            </div>
+          </div>
+
+          <div class="hero-visual reveal" data-delay="1" aria-label="Aperçu de l'application WalahaTracker">
+            <div class="hero-phone-glow" aria-hidden="true"></div>
+            <div class="phone-mockup">
+              <div class="phone-screen">
+                <div class="phone-notch" aria-hidden="true"></div>
+                <picture>
+                  <source srcset="screenshots/menu-navigation.webp" type="image/webp">
+                  <img
+                    class="phone-shot"
+                    src="screenshots/menu-navigation.png"
+                    alt="Capture d’écran de WalahaTracker : menu de navigation et tableau de bord familial"
+                    width="252"
+                    height="546"
+                    loading="eager"
+                  >
+                </picture>
+              </div>
+            </div>
+
+            <div class="float-card warm float-one" aria-hidden="true">
+              <span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Bulletin reçu
+            </div>
+            <div class="float-card cool float-two" aria-hidden="true">
+              <span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+              Frais en FCFA
+            </div>
+            <div class="float-card warm float-three" aria-hidden="true">
+              <span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+              Répétiteur lié
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="container stats-strip reveal">
+        <div class="stats-inner">
+          <div class="stat"><div class="num">12+</div><div class="lbl">familles pilotes au Mali</div></div>
+          <div class="stat"><div class="num cool">3</div><div class="lbl">profils : école, parent, répétiteur</div></div>
+          <div class="stat"><div class="num text-sm">FCFA</div><div class="lbl">frais scolaires intégrés</div></div>
+          <div class="stat"><div class="num cool">8</div><div class="lbl">modules dès la bêta</div></div>
+        </div>
+      </div>
+
+      <section class="section testimonials-section light-band">
+        <div class="container">
+          <div class="section-heading center reveal">
+            <span class="eyebrow">Ils testent WalahaTracker</span>
+            <h2>Ce que disent les premiers utilisateurs</h2>
+          </div>
+          <div class="testimonials-grid">
+            <blockquote class="testimonial-card reveal">
+              <p>« Enfin une app où je vois les bulletins et les frais de mes trois enfants sans chercher dans WhatsApp. »</p>
+              <footer>
+                <span class="t-avatar">MD</span>
+                <span><strong>Mamadou Diallo</strong><small>Parent · Bamako</small></span>
+              </footer>
+            </blockquote>
+            <blockquote class="testimonial-card reveal" data-delay="1">
+              <p>« On peut informer les parents plus facilement. Les messages ne se perdent plus dans les groupes. »</p>
+              <footer>
+                <span class="t-avatar cool">SK</span>
+                <span><strong>Seydou Keïta</strong><small>Directeur · École pilote, Tombouctou</small></span>
+              </footer>
+            </blockquote>
+            <blockquote class="testimonial-card reveal" data-delay="2">
+              <p>« Mes élèves et leurs parents me contactent directement. Je partage les devoirs en PDF dans l’app. »</p>
+              <footer>
+                <span class="t-avatar">AK</span>
+                <span><strong>Amadou Keïta</strong><small>Répétiteur · Bamako</small></span>
+              </footer>
+            </blockquote>
+          </div>
+          <div class="pilot-schools reveal" aria-label="Écoles pilotes">
+            <span class="pilot-label">Écoles pilotes</span>
+            <ul>
+              <li>École primaire de Tombouctou</li>
+              <li>École secondaire de Djinagreyber</li>
+              <li>Jardin d’enfants Fatouma Baba</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="probleme" class="section">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="eyebrow">Le problème</span>
+            <h2>Au Mali, le suivi scolaire est encore trop dispersé</h2>
+            <p>Dans beaucoup de familles, les informations scolaires circulent encore par appels, papiers, messages WhatsApp ou échanges informels.</p>
+          </div>
+          <div class="card-grid four">
+            <article class="card reveal">
+              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
+              <h3>Informations perdues</h3><p>Les bulletins, messages et annonces ne sont pas toujours faciles à retrouver.</p>
+            </article>
+            <article class="card cool reveal" data-delay="1">
+              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg></div>
+              <h3>Communication difficile</h3><p>Les échanges entre parents, école et répétiteurs sont souvent dispersés.</p>
+            </article>
+            <article class="card reveal" data-delay="2">
+              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+              <h3>Suivi manuel des frais</h3><p>Les frais scolaires en FCFA sont parfois suivis sur papier ou par messages.</p>
+            </article>
+            <article class="card cool reveal" data-delay="3">
+              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+              <h3>Manque de visibilité</h3><p>Les parents ne savent pas toujours ce qui se passe réellement à l’école.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="solution" class="section light-band">
+        <div class="container">
+          <div class="section-heading center reveal">
+            <span class="eyebrow">La solution</span>
+            <h2>Avant / Après WalahaTracker</h2>
+            <p>Moins de désordre. Plus de visibilité. Une meilleure collaboration autour de chaque enfant.</p>
+          </div>
+          <div class="compare-grid reveal">
+            <div class="compare-panel compare-before">
+              <span class="compare-tag">Avant</span>
+              <h3>Trop d’outils, trop de confusion</h3>
+              <ul>
+                <li>Appels et SMS non archivés</li>
+                <li>Groupes WhatsApp saturés</li>
+                <li>Bulletins sur papier facilement perdus</li>
+                <li>Frais notés dans un carnet</li>
+              </ul>
+            </div>
+            <div class="compare-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+            <div class="compare-panel compare-after">
+              <span class="compare-tag cool">Après</span>
+              <h3>Tout au même endroit</h3>
+              <ul>
+                <li>Profils enfants, écoles et classes</li>
+                <li>Bulletins et documents accessibles</li>
+                <li>Messagerie organisée avec l’école</li>
+                <li>Frais scolaires suivis en FCFA</li>
+              </ul>
+              <a class="btn btn-primary btn-sm" href="#apercu">Voir l’application</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="fonctionnalites" class="section">
+        <div class="container">
+          <div class="section-heading center reveal">
+            <span class="eyebrow">Application mobile</span>
+            <h2>4 piliers pour toute la famille</h2>
+            <p>Cliquez sur un pilier pour voir l’écran correspondant dans l’aperçu interactif.</p>
+          </div>
+          <div class="feature-theme-grid">
+            <button type="button" class="card feature-theme reveal" data-feature-showcase="screenshots/enfants.png" data-feature-caption="Mes enfants">
+              <span class="theme-icon warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+              <h3>Suivi familial</h3>
+              <p>Profils enfants, espace famille, bulletins et progression scolaire.</p>
+              <span class="theme-link">Voir l’écran →</span>
+            </button>
+            <button type="button" class="card feature-theme reveal" data-delay="1" data-feature-showcase="screenshots/message-conversation.png" data-feature-caption="Échange avec l’école">
+              <span class="theme-icon cool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+              <h3>École &amp; bulletins</h3>
+              <p>Espace école, partage des bulletins et échanges avec les enseignants.</p>
+              <span class="theme-link">Voir l’écran →</span>
+            </button>
+            <button type="button" class="card feature-theme reveal" data-delay="2" data-feature-showcase="screenshots/frais-scolaires.png" data-feature-caption="Frais scolaires">
+              <span class="theme-icon warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+              <h3>Finances</h3>
+              <p>Frais scolaires, contributions et besoins suivis en FCFA.</p>
+              <span class="theme-link">Voir l’écran →</span>
+            </button>
+            <button type="button" class="card feature-theme reveal" data-delay="3" data-feature-showcase="screenshots/menu-plus.png" data-feature-caption="Fonctionnalités avancées">
+              <span class="theme-icon cool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+              <h3>Connexion</h3>
+              <p>Répétiteurs, messagerie, QR codes et matching cours privés.</p>
+              <span class="theme-link">Voir l’écran →</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="apercu" class="section app-showcase">
+        <span class="showcase-glow showcase-glow-1" aria-hidden="true"></span>
+        <span class="showcase-glow showcase-glow-2" aria-hidden="true"></span>
+        <div class="container">
+          <div class="app-showcase-grid">
+            <div class="app-showcase-copy reveal">
+              <span class="badge warm"><span class="dot"></span>Application mobile</span>
+              <h2>Une interface <span class="gradient-text">moderne</span> pour suivre la scolarité</h2>
+              <p class="lead">WalahaTracker regroupe bulletins, frais en FCFA, messages et suivi des enfants dans une application claire et agréable.</p>
+
+              <div class="app-showcase-tabs" role="tablist" aria-label="Aperçu des écrans WalahaTracker">
+                <button type="button" class="showcase-tab is-active" role="tab" aria-selected="true" data-showcase
+                  data-src="screenshots/menu-navigation.png"
+                  data-alt="Menu de navigation et tableau de bord WalahaTracker"
+                  data-caption="Menu &amp; tableau de bord">
+                  <span class="tab-icon warm" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  </span>
+                  <span class="tab-text"><strong>Tableau de bord</strong><small>Moyennes, frais et enfants en un coup d’œil</small></span>
+                </button>
+                <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-showcase
+                  data-src="screenshots/enfants.png"
+                  data-alt="Liste des enfants suivis avec école et moyennes"
+                  data-caption="Mes enfants">
+                  <span class="tab-icon warm" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </span>
+                  <span class="tab-text"><strong>Mes enfants</strong><small>Du jardin d’enfants à l’université</small></span>
+                </button>
+                <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-showcase
+                  data-src="screenshots/frais-scolaires.png"
+                  data-alt="Suivi des frais scolaires en FCFA"
+                  data-caption="Frais scolaires">
+                  <span class="tab-icon cool" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  </span>
+                  <span class="tab-text"><strong>Frais scolaires</strong><small>Échéances et paiements en FCFA</small></span>
+                </button>
+                <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-showcase
+                  data-src="screenshots/messages-liste.png"
+                  data-alt="Liste des conversations avec écoles et répétiteurs"
+                  data-caption="Messagerie">
+                  <span class="tab-icon warm" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </span>
+                  <span class="tab-text"><strong>Messagerie</strong><small>Écoles, enseignants et répétiteurs</small></span>
+                </button>
+                <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-showcase
+                  data-src="screenshots/message-conversation.png"
+                  data-alt="Conversation avec un enseignant et devoir en pièce jointe"
+                  data-caption="Échange avec l’école">
+                  <span class="tab-icon cool" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </span>
+                  <span class="tab-text"><strong>Documents &amp; devoirs</strong><small>Recevez les infos directement dans l’app</small></span>
+                </button>
+                <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-showcase
+                  data-src="screenshots/menu-plus.png"
+                  data-alt="Menu des fonctionnalités avancées WalahaTracker"
+                  data-caption="Fonctionnalités avancées">
+                  <span class="tab-icon warm" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  </span>
+                  <span class="tab-text"><strong>Encore plus</strong><small>Répétiteurs, écoles, QR codes…</small></span>
+                </button>
+              </div>
+
+              <a class="btn btn-primary showcase-cta" href="#contact" data-event="click_beta_button">
+                Rejoindre la bêta
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+            </div>
+
+            <div class="app-showcase-stage reveal" data-delay="1">
+              <div class="stage-ring" aria-hidden="true"></div>
+              <div class="phone-mockup phone-mockup--showcase">
+                <div class="phone-screen">
+                  <div class="phone-notch" aria-hidden="true"></div>
+                  <picture id="showcasePicture">
+                    <source id="showcaseSource" srcset="screenshots/menu-navigation.webp" type="image/webp">
+                    <img
+                      id="showcaseShot"
+                      class="phone-shot is-visible"
+                      src="screenshots/menu-navigation.png"
+                      alt="Menu de navigation et tableau de bord WalahaTracker"
+                      width="280"
+                      height="607"
+                      loading="lazy"
+                    >
+                  </picture>
+                </div>
+              </div>
+              <p class="stage-caption" id="showcaseCaption">Menu &amp; tableau de bord</p>
+            </div>
+          </div>
+
+          <div class="app-showcase-strip reveal" aria-label="Tous les écrans de l’application">
+            <button type="button" class="strip-item is-active" data-showcase data-src="screenshots/menu-navigation.png" data-alt="Menu de navigation" data-caption="Menu &amp; tableau de bord">
+              <span class="strip-phone"><picture><source srcset="screenshots/menu-navigation.webp" type="image/webp"><img src="screenshots/menu-navigation.png" alt="" width="120" height="260" loading="lazy"></picture></span>
+              <span>Accueil</span>
+            </button>
+            <button type="button" class="strip-item" data-showcase data-src="screenshots/enfants.png" data-alt="Mes enfants" data-caption="Mes enfants">
+              <span class="strip-phone"><picture><source srcset="screenshots/enfants.webp" type="image/webp"><img src="screenshots/enfants.png" alt="" width="120" height="260" loading="lazy"></picture></span>
+              <span>Enfants</span>
+            </button>
+            <button type="button" class="strip-item" data-showcase data-src="screenshots/frais-scolaires.png" data-alt="Frais scolaires" data-caption="Frais scolaires">
+              <span class="strip-phone"><picture><source srcset="screenshots/frais-scolaires.webp" type="image/webp"><img src="screenshots/frais-scolaires.png" alt="" width="120" height="260" loading="lazy"></picture></span>
+              <span>Frais</span>
+            </button>
+            <button type="button" class="strip-item" data-showcase data-src="screenshots/messages-liste.png" data-alt="Messagerie" data-caption="Messagerie">
+              <span class="strip-phone"><picture><source srcset="screenshots/messages-liste.webp" type="image/webp"><img src="screenshots/messages-liste.png" alt="" width="120" height="260" loading="lazy"></picture></span>
+              <span>Messages</span>
+            </button>
+            <button type="button" class="strip-item" data-showcase data-src="screenshots/message-conversation.png" data-alt="Échange école" data-caption="Échange avec l’école">
+              <span class="strip-phone"><picture><source srcset="screenshots/message-conversation.webp" type="image/webp"><img src="screenshots/message-conversation.png" alt="" width="120" height="260" loading="lazy"></picture></span>
+              <span>École</span>
+            </button>
+            <button type="button" class="strip-item" data-showcase data-src="screenshots/menu-plus.png" data-alt="Menu Plus" data-caption="Fonctionnalités avancées">
+              <span class="strip-phone"><picture><source srcset="screenshots/menu-plus.webp" type="image/webp"><img src="screenshots/menu-plus.png" alt="" width="120" height="260" loading="lazy"></picture></span>
+              <span>Plus</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="ecoles" class="section audience-section">
+        <div class="container audience-card has-visual">
+          <div class="audience-copy reveal">
+            <span class="eyebrow">Pour les écoles maliennes</span>
+            <h2>Mieux organiser le lien avec les familles</h2>
+            <p>WalahaTracker aide les écoles à communiquer avec les familles, partager les bulletins et suivre les frais scolaires en FCFA.</p>
+            <ul class="check-list">
+              <li>Gestion des élèves et des classes</li>
+              <li>Partage des bulletins</li>
+              <li>Communication avec les parents</li>
+              <li>Meilleure organisation administrative</li>
+            </ul>
+            <a class="btn btn-primary" href="#contact" data-event="click_school_beta">Inscrire mon école à la bêta</a>
+          </div>
+          <div class="audience-visual reveal" data-delay="1">
+            <div class="audience-phone">
+              <picture>
+                <source srcset="screenshots/messages-liste.webp" type="image/webp">
+                <img src="screenshots/messages-liste.png" alt="Messagerie WalahaTracker pour les écoles" width="240" height="520" loading="lazy">
+              </picture>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="parents" class="section light-band audience-section">
+        <div class="container audience-card reverse has-visual">
+          <div class="audience-copy reveal">
+            <span class="eyebrow">Pour les parents</span>
+            <h2>Tout sur vos enfants, sur votre téléphone</h2>
+            <p>Suivez la scolarité de vos enfants à Bamako, Tombouctou ou ailleurs — bulletins, frais et messages au même endroit.</p>
+            <ul class="check-list">
+              <li>Suivre plusieurs enfants</li>
+              <li>Consulter les bulletins</li>
+              <li>Voir les frais scolaires en FCFA</li>
+              <li>Communiquer avec l’école</li>
+            </ul>
+            <a class="btn btn-primary" href="#contact" data-event="click_parent_beta">Tester comme parent</a>
+          </div>
+          <div class="audience-visual reveal" data-delay="1">
+            <div class="audience-phone">
+              <picture>
+                <source srcset="screenshots/enfants.webp" type="image/webp">
+                <img src="screenshots/enfants.png" alt="Écran Mes enfants dans WalahaTracker" width="240" height="520" loading="lazy">
+              </picture>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="repetiteurs" class="section audience-section">
+        <div class="container audience-card has-visual">
+          <div class="audience-copy reveal">
+            <span class="eyebrow">Pour les répétiteurs</span>
+            <h2>Accompagnez vos élèves plus facilement</h2>
+            <p>Présentez vos services, liez-vous aux enfants que vous suivez et échangez avec les familles dans un espace dédié.</p>
+            <ul class="check-list">
+              <li>Créer un profil répétiteur</li>
+              <li>Indiquer matières et disponibilités</li>
+              <li>Être lié aux enfants suivis</li>
+              <li>Communiquer avec les parents</li>
+            </ul>
+            <a class="btn btn-primary" href="#contact" data-event="click_repetiteur_beta">Rejoindre comme répétiteur</a>
+          </div>
+          <div class="audience-visual reveal" data-delay="1">
+            <div class="audience-phone">
+              <picture>
+                <source srcset="screenshots/menu-plus.webp" type="image/webp">
+                <img src="screenshots/menu-plus.png" alt="Menu répétiteur et fonctionnalités avancées" width="240" height="520" loading="lazy">
+              </picture>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="beta" class="section beta-band">
+        <div class="container beta-grid">
+          <div class="reveal">
+            <span class="badge"><span class="dot"></span>Suivi scolaire familial</span>
+            <h2>La version bêta de WalahaTracker est ouverte au Mali</h2>
+            <p>Rejoignez les familles et écoles pilotes à Bamako, Tombouctou et au-delà. Testez l’application et aidez-nous à la construire pour le Mali.</p>
+            <div class="beta-actions">
+              <a class="btn btn-light" href="#contact" data-event="click_beta_button">Demander un accès bêta</a>
+            </div>
+            <div class="store-badges store-badges--light" aria-label="Bientôt disponible sur les stores">
+              <span class="store-badge" title="Bientôt sur l’App Store">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <span><small>Bientôt sur</small>App Store</span>
+              </span>
+              <span class="store-badge" title="Bientôt sur Google Play">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.18 23.76c.39.22.86.24 1.28.05l12.75-7.38L8.53 2.04C8.18 1.82 7.77 1.8 7.4 1.96c-.4.18-.65.58-.65 1.03v19.02c0 .45.25.85.43 1.05v.7zM20.16 10.81 16.57 8.73l-3.2 3.2 3.2 3.2 3.59-2.08c.68-.39.68-1.05 0-1.44zM5.75 2.66v18.68l9.38-9.34L5.75 2.66z"/></svg>
+                <span><small>Bientôt sur</small>Google Play</span>
+              </span>
+            </div>
+          </div>
+          <ul class="beta-list reveal" data-delay="1">
+            <li>Tester les fonctionnalités principales</li>
+            <li>Donner son avis sur l’application</li>
+            <li>Identifier les besoins réels des écoles et familles</li>
+            <li>Améliorer l’expérience avant le lancement officiel</li>
+            <li>Participer à une solution éducative malienne</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="contact" class="section contact-section">
+        <div class="container contact-grid">
+          <div class="contact-copy reveal">
+            <span class="eyebrow">Contact bêta</span>
+            <h2>Vous voulez tester WalahaTracker ?</h2>
+            <p>École, parent ou répétiteur — laissez vos informations pour rejoindre la bêta au Mali.</p>
+            <a class="btn btn-secondary whatsapp-btn" href="https://wa.me/223XXXXXXXX" target="_blank" rel="noopener" data-event="click_whatsapp_button">
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.82 11.82 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.207zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+              Nous contacter sur WhatsApp
+            </a>
+          </div>
+
+          <form id="contactForm" class="contact-form reveal" data-delay="1" action="https://formspree.io/f/FORM_ID" method="POST">
+            <div class="form-row">
+              <label for="name">Nom complet *</label>
+              <input type="text" id="name" name="name" autocomplete="name" required>
+            </div>
+            <div class="form-row">
+              <label for="phone">Téléphone / WhatsApp *</label>
+              <input type="tel" id="phone" name="phone" autocomplete="tel" required>
+            </div>
+            <div class="form-row">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" autocomplete="email">
+            </div>
+            <div class="form-row">
+              <label for="city">Ville *</label>
+              <input type="text" id="city" name="city" autocomplete="address-level2" required placeholder="Ex. Bamako, Tombouctou…">
+            </div>
+            <div class="form-row">
+              <label for="profile">Profil *</label>
+              <select id="profile" name="profile" required>
+                <option value="">Sélectionnez votre profil</option>
+                <option value="École">École</option>
+                <option value="Parent">Parent</option>
+                <option value="Répétiteur">Répétiteur</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            <div class="form-row full compact-message">
+              <label for="message">Message *</label>
+              <textarea id="message" name="message" rows="3" required></textarea>
+            </div>
+            <input type="hidden" name="source" value="Site vitrine WalahaTracker">
+            <button class="btn btn-primary" type="submit">Envoyer ma demande</button>
+            <p id="formStatus" class="form-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div class="footer-brand-col">
+          <a class="brand footer-brand" href="#accueil">
+            <img src="logos/logo-symbol.png" alt="" width="32" height="56">
+            <span class="brand-name"><span class="brand-walaha">Walaha</span><span class="brand-tracker">Tracker</span></span>
+          </a>
+          <p>Application mobile de suivi scolaire familial au Mali.</p>
+          <p class="footer-mali">Conçu au Mali 🇲🇱 · Frais en FCFA · Bamako &amp; régions</p>
+        </div>
+        <nav class="footer-nav" aria-label="Navigation pied de page">
+          <strong>Navigation</strong>
+          <a href="#accueil">Accueil</a>
+          <a href="#fonctionnalites">Fonctionnalités</a>
+          <a href="#apercu">Aperçu</a>
+          <a href="#beta">Bêta</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <div class="footer-contact">
+          <strong>Contact</strong>
+          <a href="https://wa.me/223XXXXXXXX" target="_blank" rel="noopener">WhatsApp</a>
+          <a href="#contact">Formulaire bêta</a>
+          <a href="mailto:contact@walaha.ml">contact@walaha.ml</a>
+        </div>
+      </div>
+      <div class="container copyright">
+        <span>© 2026 WalahaTracker. Tous droits réservés.</span>
+        <span class="footer-legal"><a href="#contact">Mentions légales</a></span>
+      </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>
