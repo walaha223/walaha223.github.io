@@ -1509,7 +1509,25 @@ input:focus, select:focus, textarea:focus {
 
 .store-badges--light .store-badge small { color: rgba(255, 255, 255, 0.65); }
 
-.beta-actions { margin-bottom: 18px; }
+.beta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.btn-outline-light {
+  background: transparent;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+}
+
+.btn-outline-light:hover,
+.btn-outline-light:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.7);
+}
 
 /* ---------- Témoignages ---------- */
 .testimonials-section { padding-top: clamp(48px, 7vw, 80px); }
