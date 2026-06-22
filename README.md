@@ -25,15 +25,16 @@ chmod +x deploy-github.sh
 
 Le script initialise le dépôt (si besoin), commit les fichiers et pousse sur `https://github.com/walaha223/walaha223.github.io.git`.
 
-### Activer GitHub Pages (une seule fois)
+### Activer GitHub Pages (obligatoire, une seule fois)
 
-1. Ouvrir [github.com/walaha223/walaha223.github.io/settings/pages](https://github.com/walaha223/walaha223.github.io/settings/pages)
-2. **Build and deployment** → Source : **GitHub Actions**
-3. Après le push, l’action « Deploy GitHub Pages » publie automatiquement le site
+Le dépôt contient le site, mais GitHub Pages doit être activé manuellement :
 
-### URL du site
+1. Ouvrir [Settings → Pages](https://github.com/walaha223/walaha223.github.io/settings/pages)
+2. **Build and deployment** → **Deploy from a branch**
+3. **Branch** : `main` · **Folder** : `/ (root)`
+4. Cliquer **Save**
 
-**https://walaha223.github.io/**
+Le site sera disponible sur **https://walaha223.github.io/** après 1 à 2 minutes.
 
 ## Captures de validation
 
