@@ -6,3 +6,6 @@ Thumbs.db
 
 # Captures brutes macOS (les versions recadrées sont conservées)
 screenshots/Screenshot *.png
+
+# APK Android (généré par WalahaTracker/build-apk.sh — trop lourd pour git)
+apk/*.apk
