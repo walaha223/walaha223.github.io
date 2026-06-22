@@ -8,4 +8,4 @@ Thumbs.db
 screenshots/Screenshot *.png
 
 # APK Android (généré par WalahaTracker/build-apk.sh — trop lourd pour git)
-apk/*.apk
+# apk/*.apk
