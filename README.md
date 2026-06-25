@@ -55,3 +55,15 @@ Remplacer les placeholders suivants dans `index.html` :
 - `css/style.css` : styles responsive.
 - `js/main.js` : menu mobile, suivi des événements, soumission du formulaire.
 - `logos/` : assets logo fournis.
+- `wac/` : Walaha Admin Center (démo statique).
+- `pwe/` : Portail Web Écoles — [README](pwe/README.md) · démo `directeur@fasokanu.ml` / `walaha-demo`
+
+
+
+
+
+
+marketing@walaha.net
+support@walaha.net
+
+A Ajouter au site web

@@ -8,4 +8,5 @@ Thumbs.db
 screenshots/Screenshot *.png
 
 # APK Android (hébergé sur GitHub Releases — WalahaTracker/release-apk.sh)
-apk/*.apk
+#apk/*.apk
+#pwe/js/supabase-config.js

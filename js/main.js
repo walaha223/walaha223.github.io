@@ -4,7 +4,7 @@ const contactForm = document.getElementById("contactForm");
 const formStatus = document.getElementById("formStatus");
 const siteHeader = document.querySelector(".site-header");
 const navLinks = document.querySelectorAll("[data-nav]");
-const sectionIds = ["accueil", "fonctionnalites", "apercu", "ecoles", "parents", "repetiteurs", "beta", "contact"];
+const sectionIds = ["accueil", "fonctionnalites", "apercu", "ecoles", "parents", "repetiteurs", "version", "contact"];
 
 // Ombre du header au défilement
 if (siteHeader) {

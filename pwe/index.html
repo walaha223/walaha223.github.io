@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portail Web Écoles — Walaha</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/pwe.css?v=20260623-33" />
+  </head>
+  <body>
+    <div class="bg-aurora" aria-hidden="true"></div>
+    <!-- Écran connexion -->
+    <div id="loginScreen" class="login-screen">
+      <div class="login-card">
+        <div class="login-brand">
+          <img src="../logos/logo.svg" alt="Walaha" width="48" height="48" />
+          <div>
+            <h1>Portail Web Écoles</h1>
+            <p>Espace réservé aux établissements validés</p>
+          </div>
+        </div>
+        <form id="loginForm">
+          <label for="email">Email professionnel</label>
+          <input id="email" type="email" autocomplete="username" placeholder="directeur@ecole.ml" required />
+          <label for="password">Mot de passe</label>
+          <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+          <button type="submit" class="primary-btn">Se connecter</button>
+        </form>
+        <div id="loginError" class="login-error hidden" role="alert"></div>
+        <p id="loginModeHint" class="login-hint" style="margin-top:16px;margin-bottom:0;"></p>
+        <div class="login-hint">
+          <strong>Accès restreint</strong> — Personnel d'école autorisé uniquement.
+          Données synchronisées en temps réel.
+        </div>
+        <div id="demoLoginHint" class="login-hint hidden">
+          <strong>Démo locale</strong> — <code>?demo=1</code> uniquement, sans connexion cloud.
+          <br /><br />
+          <strong>directeur@fasokanu.ml</strong> / <strong>walaha-demo</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu hamburger école -->
+    <div class="school-drawer hidden" id="schoolDrawer" role="dialog" aria-modal="true" aria-label="Menu école">
+      <div class="school-drawer-backdrop" id="schoolDrawerBackdrop" data-school-drawer-close></div>
+      <aside class="school-drawer-panel" role="document">
+        <header class="school-drawer-head">
+          <div class="school-drawer-brand">
+            <div class="school-logo school-logo--drawer" id="drawerSchoolLogoWrap">
+              <img class="school-logo-img hidden" id="drawerSchoolLogoImg" alt="" width="40" height="40" />
+              <span class="school-logo-fallback" id="drawerSchoolMark" aria-hidden="true">WE</span>
+            </div>
+            <div>
+              <strong class="school-drawer-title">Portail Web Écoles</strong>
+              <span class="school-drawer-school" id="drawerSchoolName">—</span>
+            </div>
+          </div>
+          <button type="button" class="school-drawer-close" id="schoolDrawerClose" aria-label="Fermer le menu">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12l-4.89 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4Z" fill="currentColor"/></svg>
+          </button>
+        </header>
+
+        <div class="school-drawer-profile" role="tablist" aria-label="Profil d'espace">
+          <button type="button" class="school-profile-tab active" data-profile-mode="promoter" role="tab" aria-selected="true">
+            <svg aria-hidden="true"><use href="#i-building"></use></svg>
+            Promoteur
+          </button>
+          <button type="button" class="school-profile-tab" data-profile-mode="parents" role="tab" aria-selected="false">
+            <svg aria-hidden="true"><use href="#i-users"></use></svg>
+            Parents
+          </button>
+        </div>
+
+        <nav class="school-drawer-nav" id="schoolDrawerNav" aria-label="Navigation école"></nav>
+
+        <footer class="school-drawer-foot">
+          <code class="school-drawer-code" id="drawerSchoolCode">—</code>
+          <button type="button" class="school-drawer-logout" id="drawerLogoutBtn">
+            <svg aria-hidden="true"><use href="#i-log-out"></use></svg>
+            Déconnexion
+          </button>
+        </footer>
+      </aside>
+    </div>
+
+    <!-- Application -->
+    <div id="appShell" class="app-shell hidden">
+      <div class="overlay" id="sidebarOverlay"></div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-glow" aria-hidden="true"></div>
+        <div class="sidebar-inner">
+          <header class="sidebar-head">
+            <div class="sidebar-brand-card">
+              <div class="school-logo school-logo--sidebar" id="sidebarSchoolLogoWrap">
+                <img class="school-logo-img hidden" id="sidebarSchoolLogoImg" alt="" width="40" height="40" />
+                <span class="school-logo-fallback" id="sidebarSchoolMark" aria-hidden="true">WE</span>
+              </div>
+              <div class="sidebar-brand-copy">
+                <span class="sidebar-brand-eyebrow">Portail Web Écoles</span>
+                <strong class="sidebar-school-name" id="sidebarSchoolName">—</strong>
+                <code class="sidebar-school-code" id="sidebarUser">—</code>
+              </div>
+            </div>
+          </header>
+
+          <nav class="sidebar-nav" id="sidebarNav" aria-label="Navigation principale">
+            <div class="sidebar-group">
+              <p class="sidebar-group-label"><span>Pilotage</span></p>
+              <a href="#dashboard" class="nav-link" data-route="dashboard">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-dashboard"></use></svg></span>
+                <span class="nav-label">Tableau de bord</span>
+              </a>
+              <a href="#statistics" class="nav-link" data-route="statistics">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-chart"></use></svg></span>
+                <span class="nav-label">Statistiques</span>
+              </a>
+              <a href="#profile" class="nav-link" data-route="profile">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-building"></use></svg></span>
+                <span class="nav-label">Profil école</span>
+              </a>
+            </div>
+
+            <div class="sidebar-group">
+              <p class="sidebar-group-label"><span>Scolarité</span></p>
+              <a href="#classes" class="nav-link" data-route="classes">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-grid"></use></svg></span>
+                <span class="nav-label">Classes</span>
+              </a>
+              <a href="#students" class="nav-link" data-route="students">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-users"></use></svg></span>
+                <span class="nav-label">Élèves</span>
+              </a>
+              <a href="#teachers" class="nav-link" data-route="teachers">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-user-check"></use></svg></span>
+                <span class="nav-label">Personnel</span>
+              </a>
+              <a href="#reports" class="nav-link" data-route="reports">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-file-text"></use></svg></span>
+                <span class="nav-label">Bulletins</span>
+              </a>
+            </div>
+
+            <div class="sidebar-group">
+              <p class="sidebar-group-label"><span>Administration</span></p>
+              <a href="#fees" class="nav-link" data-route="fees">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-credit-card"></use></svg></span>
+                <span class="nav-label">Frais scolaires</span>
+              </a>
+              <a href="#messages" class="nav-link" data-route="messages">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-mail"></use></svg></span>
+                <span class="nav-label">Messages</span>
+                <span class="nav-badge hidden" id="sidebarMessagesBadge">0</span>
+              </a>
+              <a href="#store" class="nav-link" data-route="store">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+                <span class="nav-label">WalahaStore</span>
+              </a>
+              <a href="#settings" class="nav-link" data-route="settings">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-settings"></use></svg></span>
+                <span class="nav-label">Paramètres</span>
+              </a>
+            </div>
+          </nav>
+
+          <footer class="sidebar-foot">
+            <button type="button" class="sidebar-logout" id="logoutBtn">
+              <svg aria-hidden="true"><use href="#i-log-out"></use></svg>
+              <span>Déconnexion</span>
+            </button>
+          </footer>
+        </div>
+      </aside>
+
+      <div class="main-area">
+        <header class="app-header" id="appHeader" aria-label="En-tête Portail Web Écoles">
+          <div class="app-header-glow" aria-hidden="true"></div>
+
+          <div class="app-header-bar">
+            <div class="app-header-start">
+              <button type="button" class="school-menu-btn" id="menuToggle" aria-label="Ouvrir le menu école" aria-expanded="false" aria-controls="schoolDrawer">
+                <span class="school-menu-bar" aria-hidden="true"></span>
+                <span class="school-menu-bar" aria-hidden="true"></span>
+                <span class="school-menu-bar" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="icon-btn app-header-sidebar-btn" id="collapseSidebarBtn" aria-label="Réduire le menu latéral">
+                <svg aria-hidden="true"><use href="#i-panel-left"></use></svg>
+              </button>
+              <a href="#dashboard" class="app-header-brand" aria-label="Portail Web Écoles — Accueil">
+                <img src="../logos/logo.svg" alt="" width="28" height="28" />
+                <span class="app-header-brand-text">Portail Web Écoles</span>
+              </a>
+            </div>
+
+            <div class="app-header-center">
+              <nav class="app-header-crumb" aria-label="Fil d'Ariane">
+                <a href="#dashboard" class="breadcrumb-link" data-breadcrumb="dashboard">Accueil</a>
+                <span class="breadcrumb-sep" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41.04Z" fill="currentColor"/></svg>
+                </span>
+                <span class="breadcrumb-current" id="breadcrumbCurrent">Tableau de bord</span>
+              </nav>
+              <div class="app-header-headline">
+                <h1 id="pageTitle">Tableau de bord</h1>
+                <span class="app-header-section" id="topbarSectionTag">Pilotage</span>
+              </div>
+            </div>
+
+            <div class="app-header-end">
+              <button type="button" class="app-header-search" id="commandBtn" aria-label="Rechercher (Ctrl+K)">
+                <svg class="app-header-search-glyph" aria-hidden="true"><use href="#i-search"></use></svg>
+                <span class="app-header-search-label">Rechercher…</span>
+                <kbd class="app-header-search-kbd">⌘K</kbd>
+              </button>
+
+              <div class="app-header-tools" role="toolbar" aria-label="Actions en-tête">
+                <button type="button" class="app-header-tool" id="refreshBtn" aria-label="Actualiser">
+                  <svg aria-hidden="true"><use href="#i-refresh"></use></svg>
+                </button>
+                <button type="button" class="app-header-tool app-header-tool--notify" id="topbarMessagesBtn" aria-label="Messages">
+                  <svg aria-hidden="true"><use href="#i-mail"></use></svg>
+                  <span class="app-header-badge hidden" id="topbarUnreadBadge">0</span>
+                </button>
+                <button type="button" class="app-header-tool" id="themeBtn" aria-label="Thème">
+                  <svg aria-hidden="true"><use href="#i-moon"></use></svg>
+                </button>
+              </div>
+
+              <span id="dataModeBadge" class="demo-badge hidden" title="Mode démonstration">Démo</span>
+
+              <div class="user-menu" id="userMenu">
+                <button type="button" class="user-menu-trigger" id="userMenuBtn" aria-expanded="false" aria-haspopup="true" aria-label="Menu compte">
+                  <span class="user-avatar" id="userAvatar">
+                    <img class="user-avatar-img hidden" id="userAvatarImg" alt="" width="30" height="30" />
+                    <span class="user-avatar-initials" id="userAvatarInitials">—</span>
+                  </span>
+                  <span class="user-menu-label">
+                    <span class="user-menu-name" id="topbarUserName">—</span>
+                    <span class="user-menu-role" id="topbarRoleMobile">—</span>
+                  </span>
+                  <svg class="user-menu-chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+                </button>
+                <div class="user-menu-panel hidden" id="userMenuPanel" role="menu">
+                  <div class="user-menu-head">
+                    <span class="user-menu-head-name" id="userMenuName">—</span>
+                    <code class="user-menu-head-code" id="userMenuCode">—</code>
+                  </div>
+                  <button type="button" class="user-menu-item" data-user-menu="profile" role="menuitem">
+                    <svg aria-hidden="true"><use href="#i-building"></use></svg>
+                    Profil école
+                  </button>
+                  <button type="button" class="user-menu-item" data-user-menu="settings" role="menuitem">
+                    <svg aria-hidden="true"><use href="#i-settings"></use></svg>
+                    Paramètres
+                  </button>
+                  <button type="button" class="user-menu-item user-menu-item--danger" data-user-menu="logout" role="menuitem">
+                    <svg aria-hidden="true"><use href="#i-log-out"></use></svg>
+                    Déconnexion
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="app-header-identity">
+            <div class="app-header-identity-card">
+              <div class="school-logo school-logo--header" id="topbarSchoolLogoWrap">
+                <img class="school-logo-img hidden" id="topbarSchoolLogoImg" alt="" width="36" height="36" />
+                <span class="school-logo-fallback app-header-mark" id="topbarSchoolMark" aria-hidden="true">WE</span>
+              </div>
+              <div class="app-header-identity-copy">
+                <span class="app-header-greeting" id="appHeaderGreeting">Bonjour</span>
+                <strong class="app-header-school-name" id="topbarSchoolName">—</strong>
+                <span class="app-header-role" id="topbarRole">—</span>
+              </div>
+              <div class="school-switcher" id="schoolSwitcher">
+                <button type="button" class="school-switcher-trigger hidden" id="schoolSwitcherBtn" aria-expanded="false" aria-haspopup="listbox" aria-label="Changer d'école">
+                  <svg aria-hidden="true"><use href="#i-grid"></use></svg>
+                  <span class="school-switcher-label">Mes écoles</span>
+                  <span class="school-switcher-count" id="schoolSwitcherCount">0</span>
+                  <svg class="school-switcher-chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+                </button>
+                <div class="school-switcher-panel hidden" id="schoolSwitcherPanel" role="listbox" aria-label="Écoles accessibles">
+                  <p class="school-switcher-head">Changer d'établissement</p>
+                  <ul class="school-switcher-list" id="schoolSwitcherList"></ul>
+                </div>
+              </div>
+              <button type="button" class="app-header-profile-pill" id="topbarProfileMode" aria-label="Changer d'espace Promoteur ou Parents">
+                <svg aria-hidden="true"><use href="#i-building"></use></svg>
+                <span id="topbarProfileModeLabel">Promoteur</span>
+              </button>
+              <span class="app-header-year" id="topbarYear" title="Année scolaire">
+                <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
+                <span>—</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="topbar-sub hidden" id="topbarSub" aria-label="Actions rapides">
+            <div class="topbar-quick" id="topbarQuickActions"></div>
+          </div>
+
+          <div class="app-header-accent" aria-hidden="true"></div>
+        </header>
+
+        <div class="topbar-sub hidden" id="topbarSub" aria-label="Actions rapides">
+          <div class="topbar-quick" id="topbarQuickActions"></div>
+        </div>
+
+        <main class="content">
+          <!-- Dashboard -->
+          <section class="view active" id="view-dashboard" data-title="Tableau de bord">
+            <header class="dashboard-hero" id="dashboardHero">
+              <div class="dashboard-hero-glow" aria-hidden="true"></div>
+              <div class="dashboard-hero-body">
+                <div class="dashboard-hero-copy">
+                  <p class="dashboard-hero-eyebrow" id="dashboardGreeting">Bonjour</p>
+                  <h2 class="dashboard-hero-title" id="dashboardHeroTitle">Tableau de bord</h2>
+                  <p class="dashboard-hero-sub" id="dashboardHeroSub">Vue d’ensemble de votre établissement</p>
+                </div>
+                <div class="dashboard-hero-chips" id="dashboardHeroChips"></div>
+              </div>
+            </header>
+
+            <div class="stats-grid dashboard-stats" id="dashboardStats"></div>
+
+            <div class="dashboard-layout">
+              <div class="dashboard-main">
+                <article class="dash-panel">
+                  <div class="dash-panel-head">
+                    <div class="dash-panel-title">
+                      <span class="dash-panel-icon dash-panel-icon--activity">
+                        <svg aria-hidden="true"><use href="#i-chart"></use></svg>
+                      </span>
+                      <div>
+                        <h3>Activité récente</h3>
+                        <p class="dash-panel-sub">Dernières mises à jour</p>
+                      </div>
+                    </div>
+                  </div>
+                  <ul class="dash-feed" id="activityList"></ul>
+                </article>
+
+                <article class="dash-panel dash-panel--todo">
+                  <div class="dash-panel-head">
+                    <div class="dash-panel-title">
+                      <span class="dash-panel-icon dash-panel-icon--todo">
+                        <svg aria-hidden="true"><use href="#i-receipt"></use></svg>
+                      </span>
+                      <div>
+                        <h3>À traiter</h3>
+                        <p class="dash-panel-sub">Priorités du moment</p>
+                      </div>
+                    </div>
+                    <span class="dash-panel-badge" id="dashboardTodoCount">0</span>
+                  </div>
+                  <ul class="dash-todos" id="todoList"></ul>
+                </article>
+              </div>
+
+              <aside class="dashboard-side">
+                <article class="dash-panel dash-panel--actions">
+                  <div class="dash-panel-head">
+                    <div class="dash-panel-title">
+                      <span class="dash-panel-icon dash-panel-icon--actions">
+                        <svg aria-hidden="true"><use href="#i-plus"></use></svg>
+                      </span>
+                      <div>
+                        <h3>Actions rapides</h3>
+                        <p class="dash-panel-sub">Raccourcis fréquents</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dash-actions" id="quickActions"></div>
+                </article>
+              </aside>
+            </div>
+          </section>
+
+          <!-- Statistiques -->
+          <section class="view" id="view-statistics" data-title="Statistiques">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Pilotage</p>
+                <h2>Statistiques école</h2>
+              </div>
+            </div>
+            <div class="stats-grid" id="statsOverview"></div>
+            <div class="two-col" style="margin-top:20px;">
+              <article class="panel">
+                <h3>Élèves par classe</h3>
+                <div class="table-card table-card--flat">
+                  <table>
+                    <thead>
+                      <tr><th>Classe</th><th>Niveau</th><th>Effectif</th></tr>
+                    </thead>
+                    <tbody id="statsByClassTable"></tbody>
+                  </table>
+                </div>
+              </article>
+              <article class="panel">
+                <h3>Moyenne par classe (bulletins publiés)</h3>
+                <div class="table-card table-card--flat">
+                  <table>
+                    <thead>
+                      <tr><th>Classe</th><th>Moyenne</th><th>Bulletins</th></tr>
+                    </thead>
+                    <tbody id="statsAveragesTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+            <article class="panel" style="margin-top:20px;">
+              <h3>Publication des bulletins</h3>
+              <div class="progress-block" id="statsReportProgress"></div>
+            </article>
+          </section>
+
+          <!-- Profil -->
+          <section class="view" id="view-profile" data-title="Profil école">
+            <div class="profile-hero" id="profileHero">
+              <div class="school-logo school-logo--profile" id="profileSchoolLogoWrap">
+                <img class="school-logo-img hidden" id="profileSchoolLogoImg" alt="" width="72" height="72" />
+                <span class="school-logo-fallback" id="profileSchoolMark" aria-hidden="true">WE</span>
+              </div>
+              <div class="profile-hero-copy">
+                <p class="profile-hero-eyebrow">Établissement</p>
+                <h2 class="profile-hero-title" id="profileHeroTitle">—</h2>
+                <p class="profile-hero-sub" id="profileHeroSub">—</p>
+              </div>
+              <button type="button" class="btn secondary-btn profile-hero-edit" data-action="edit-school-profile">
+                <span class="btn-ico"><svg aria-hidden="true"><use href="#i-edit"></use></svg></span>
+                Modifier
+              </button>
+            </div>
+            <div class="profile-grid" id="profileGrid"></div>
+          </section>
+
+          <!-- Classes -->
+          <section class="view" id="view-classes" data-title="Classes">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Organisation</p>
+                <h2>Classes</h2>
+              </div>
+              <button type="button" class="btn primary-action" data-action="add-class">
+                <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+                Ajouter une classe
+              </button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Rechercher une classe..." data-search="classes" />
+              <select data-filter="classes">
+                <option value="all">Tous les statuts</option>
+                <option value="active">Active</option>
+                <option value="archived">Archivée</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr><th>Classe</th><th>Niveau</th><th>Année</th><th>Maître de classe</th><th>Élèves</th><th>Statut</th><th></th></tr>
+                </thead>
+                <tbody id="classesTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Élèves -->
+          <section class="view" id="view-students" data-title="Élèves">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Effectifs</p>
+                <h2>Élèves</h2>
+              </div>
+              <button type="button" class="btn primary-action" data-action="add-student">
+                <span class="btn-ico"><svg aria-hidden="true"><use href="#i-user-plus"></use></svg></span>
+                Inscrire un élève
+              </button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Nom ou code élève..." data-search="students" />
+              <select data-filter="students">
+                <option value="all">Tous les statuts</option>
+                <option value="active">Actif</option>
+                <option value="suspended">Suspendu</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr><th>Élève</th><th>Classe</th><th>Code</th><th>Genre</th><th>Parents liés</th><th>Statut</th><th></th></tr>
+                </thead>
+                <tbody id="studentsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Enseignants -->
+          <section class="view" id="view-teachers" data-title="Enseignants">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Personnel</p>
+                <h2>Enseignants &amp; staff</h2>
+              </div>
+              <button type="button" class="btn primary-action" data-action="invite-staff">
+                <span class="btn-ico"><svg aria-hidden="true"><use href="#i-user-plus"></use></svg></span>
+                Lier un membre (code)
+              </button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Nom ou code Walaha…" data-search="teachers" />
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr><th>Nom</th><th>Code Walaha</th><th>Rôle</th><th>Classes</th><th>Statut</th></tr>
+                </thead>
+                <tbody id="teachersTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Bulletins -->
+          <section class="view" id="view-reports" data-title="Bulletins">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Évaluations</p>
+                <h2>Bulletins</h2>
+              </div>
+              <div class="module-head-actions">
+                <button type="button" class="btn secondary-btn" data-action="add-report">
+                  <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+                  Ajouter un bulletin
+                </button>
+                <button type="button" class="btn primary-action" data-action="publish-reports">
+                  <span class="btn-ico"><svg aria-hidden="true"><use href="#i-upload"></use></svg></span>
+                  Publier les bulletins
+                </button>
+              </div>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Élève ou classe..." data-search="reports" />
+              <select data-filter="reports">
+                <option value="all">Tous les statuts</option>
+                <option value="published">Publié</option>
+                <option value="pending">En attente</option>
+                <option value="draft">Brouillon</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr><th>Élève</th><th>Classe</th><th>Trimestre</th><th>Moyenne</th><th>Statut</th></tr>
+                </thead>
+                <tbody id="reportsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Frais -->
+          <section class="view" id="view-fees" data-title="Frais scolaires">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Finances</p>
+                <h2>Frais scolaires</h2>
+              </div>
+              <button type="button" class="btn primary-action" data-action="record-fee-payment">
+                <span class="btn-ico"><svg aria-hidden="true"><use href="#i-receipt"></use></svg></span>
+                Enregistrer un paiement
+              </button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Élève..." data-search="fees" />
+              <select data-filter="fees">
+                <option value="all">Tous</option>
+                <option value="paid">Payé</option>
+                <option value="unpaid">Impayé</option>
+                <option value="partial">Partiel</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr><th>Élève</th><th>Classe</th><th>Montant (FCFA)</th><th>Échéance</th><th>Statut</th></tr>
+                </thead>
+                <tbody id="feesTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Messages -->
+          <section class="view" id="view-messages" data-title="Messages">
+            <header class="module-hero module-hero--messages">
+              <div class="module-hero-glow" aria-hidden="true"></div>
+              <div class="module-hero-body">
+                <div class="module-hero-copy">
+                  <p class="module-hero-eyebrow">Communication</p>
+                  <h2 class="module-hero-title">Messages parents</h2>
+                  <p class="module-hero-sub">Annonces, réponses et notifications de votre établissement</p>
+                </div>
+                <button type="button" class="btn primary-action module-hero-cta" data-action="compose-message">
+                  <span class="btn-ico"><svg aria-hidden="true"><use href="#i-compose"></use></svg></span>
+                  Nouveau message
+                </button>
+              </div>
+            </header>
+
+            <div class="messages-stats" id="messagesStats" aria-label="Statistiques messages"></div>
+
+            <div class="messages-toolbar">
+              <label class="messages-search">
+                <svg aria-hidden="true"><use href="#i-search"></use></svg>
+                <input type="search" id="messagesSearch" placeholder="Rechercher un sujet ou un expéditeur…" data-search="messages" />
+              </label>
+              <select class="messages-filter" id="messagesFilter" data-filter="messages">
+                <option value="all">Tous les messages</option>
+                <option value="unread">Non lus</option>
+                <option value="read">Lus</option>
+              </select>
+            </div>
+
+            <div class="messages-layout">
+              <div class="messages-list-wrap">
+                <ul class="messages-list" id="messagesList" aria-label="Liste des messages"></ul>
+              </div>
+              <aside class="messages-preview" id="messagesPreview" aria-label="Aperçu du message">
+                <div class="messages-preview-empty" id="messagesPreviewEmpty">
+                  <span class="messages-preview-empty-icon" aria-hidden="true">
+                    <svg><use href="#i-mail"></use></svg>
+                  </span>
+                  <p>Sélectionnez un message pour l’afficher</p>
+                </div>
+                <article class="messages-preview-card hidden" id="messagesPreviewCard">
+                  <header class="messages-preview-head">
+                    <div>
+                      <span class="messages-preview-from" id="messagesPreviewFrom">—</span>
+                      <h3 class="messages-preview-subject" id="messagesPreviewSubject">—</h3>
+                    </div>
+                    <time class="messages-preview-date" id="messagesPreviewDate">—</time>
+                  </header>
+                  <div class="messages-preview-meta" id="messagesPreviewMeta"></div>
+                  <div class="messages-preview-body" id="messagesPreviewBody">—</div>
+                  <footer class="messages-preview-actions">
+                    <button type="button" class="btn primary-action" data-action="compose-message">
+                      <span class="btn-ico"><svg aria-hidden="true"><use href="#i-reply"></use></svg></span>
+                      Répondre
+                    </button>
+                  </footer>
+                </article>
+              </aside>
+            </div>
+          </section>
+
+          <!-- WalahaStore -->
+          <section class="view" id="view-store" data-title="WalahaStore">
+            <header class="module-hero module-hero--store">
+              <div class="module-hero-glow" aria-hidden="true"></div>
+              <div class="module-hero-body">
+                <div class="module-hero-copy">
+                  <p class="module-hero-eyebrow">Boutique de modules</p>
+                  <h2 class="module-hero-title">WalahaStore</h2>
+                  <p class="module-hero-sub">Activez des modules avancés et premium pour votre école, selon vos besoins réels.</p>
+                </div>
+              </div>
+            </header>
+
+            <div class="store-layout">
+              <div class="store-main">
+                <div class="toolbar">
+                  <div class="search-field">
+                    <input type="search" placeholder="Rechercher un module…" data-search="store" aria-label="Rechercher un module" />
+                  </div>
+                  <select data-filter="store" aria-label="Filtrer par catégorie">
+                    <option value="all">Toutes les catégories</option>
+                    <option value="Pédagogie">Pédagogie</option>
+                    <option value="Communication">Communication</option>
+                    <option value="Administration">Administration</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Pilotage">Pilotage</option>
+                    <option value="Premium">Premium</option>
+                    <option value="Visibilité">Visibilité</option>
+                    <option value="Services scolaires">Services scolaires</option>
+                  </select>
+                </div>
+                <div class="store-grid" id="storeCatalog"></div>
+              </div>
+
+              <aside class="store-side">
+                <section class="store-side-card">
+                  <h3>Modules actifs</h3>
+                  <ul class="store-sub-list" id="storeActive"></ul>
+                </section>
+                <section class="store-side-card">
+                  <h3>Demandes en attente</h3>
+                  <ul class="store-sub-list" id="storePending"></ul>
+                </section>
+              </aside>
+            </div>
+          </section>
+
+          <!-- Paramètres -->
+          <section class="view" id="view-settings" data-title="Paramètres">
+            <header class="module-hero module-hero--settings">
+              <div class="module-hero-glow" aria-hidden="true"></div>
+              <div class="module-hero-body">
+                <div class="module-hero-copy">
+                  <p class="module-hero-eyebrow">Configuration</p>
+                  <h2 class="module-hero-title">Paramètres</h2>
+                  <p class="module-hero-sub">Compte école, préférences et règles de sécurité du portail</p>
+                </div>
+              </div>
+            </header>
+
+            <div class="settings-layout">
+              <div class="settings-grid">
+                <article class="settings-card settings-card--account">
+                  <header class="settings-card-head">
+                    <span class="settings-card-icon settings-card-icon--teal">
+                      <svg aria-hidden="true"><use href="#i-building"></use></svg>
+                    </span>
+                    <div>
+                      <h3>Compte école</h3>
+                      <p>Identité et rôle sur le portail</p>
+                    </div>
+                  </header>
+                  <dl class="settings-kv">
+                    <div><dt>École</dt><dd id="settingsSchoolName">—</dd></div>
+                    <div><dt>Code</dt><dd><code id="settingsSchoolCode">—</code></dd></div>
+                    <div><dt>Rôle</dt><dd id="settingsRole">—</dd></div>
+                    <div><dt>Année scolaire</dt><dd id="settingsYear">—</dd></div>
+                  </dl>
+                </article>
+
+                <article class="settings-card settings-card--prefs">
+                  <header class="settings-card-head">
+                    <span class="settings-card-icon settings-card-icon--amber">
+                      <svg aria-hidden="true"><use href="#i-settings"></use></svg>
+                    </span>
+                    <div>
+                      <h3>Préférences</h3>
+                      <p>Affichage et mode de données</p>
+                    </div>
+                  </header>
+                  <ul class="settings-actions">
+                    <li>
+                      <div class="settings-action-copy">
+                        <strong>Thème sombre</strong>
+                        <span>Adapter l’interface à la luminosité</span>
+                      </div>
+                      <button type="button" class="settings-toggle" id="settingsThemeBtn" aria-pressed="false">Basculer</button>
+                    </li>
+                    <li>
+                      <div class="settings-action-copy">
+                        <strong>Mode données</strong>
+                        <span id="settingsDataMode">—</span>
+                      </div>
+                      <span class="settings-pill" id="settingsDataPill">—</span>
+                    </li>
+                    <li>
+                      <div class="settings-action-copy">
+                        <strong>Version portail</strong>
+                        <span>Build actuel du PWE</span>
+                      </div>
+                      <code class="settings-build" id="settingsBuild">—</code>
+                    </li>
+                  </ul>
+                </article>
+
+                <article class="settings-card settings-card--security settings-card--wide">
+                  <header class="settings-card-head">
+                    <span class="settings-card-icon settings-card-icon--rose">
+                      <svg aria-hidden="true"><use href="#i-shield"></use></svg>
+                    </span>
+                    <div>
+                      <h3>Sécurité &amp; accès</h3>
+                      <p>Règles appliquées à votre établissement</p>
+                    </div>
+                  </header>
+                  <ul class="settings-policy">
+                    <li>
+                      <span class="settings-policy-icon" aria-hidden="true">✓</span>
+                      <div>
+                        <strong>Isolation des données</strong>
+                        <p>Chaque école ne voit que ses propres classes, élèves et finances.</p>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="settings-policy-icon" aria-hidden="true">✓</span>
+                      <div>
+                        <strong>Rôles du personnel</strong>
+                        <p>Les permissions dépendent du rôle <code>school_staff</code> (directeur, secrétaire, enseignant…).</p>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="settings-policy-icon" aria-hidden="true">✓</span>
+                      <div>
+                        <strong>École validée requise</strong>
+                        <p>Connexion refusée si l’établissement est suspendu ou non validé par Walaha.</p>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="settings-policy-icon" aria-hidden="true">✓</span>
+                      <div>
+                        <strong>Séparation WAC</strong>
+                        <p>Pas d’accès à Walaha Admin Center depuis ce portail école.</p>
+                      </div>
+                    </li>
+                  </ul>
+                </article>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Icônes SVG (sprite) -->
+    <svg class="sr-only" aria-hidden="true">
+      <symbol id="i-dashboard" viewBox="0 0 24 24">
+        <path d="M3 13h8V3H3v10Zm10 8h8V11h-8v10ZM3 21h8v-6H3v6Zm10-18v6h8V3h-8Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-building" viewBox="0 0 24 24">
+        <path d="M4 21V3h16v18H4Zm4-2h2v-2H8v2Zm0-4h2v-2H8v2Zm0-4h2V9H8v2Zm6 8h2v-2h-2v2Zm0-4h2v-2h-2v2Zm0-4h2V9h-2v2Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24">
+        <path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24">
+        <path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3Zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h7v-2.5c0-2.33-4.67-3.5-7-3.5Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-user-check" viewBox="0 0 24 24">
+        <path d="M9 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.33 0-7 1.67-7 5v1h11.5a6.5 6.5 0 0 1-.5-2.5c0-1.3.38-2.52 1.03-3.55A11.7 11.7 0 0 0 9 13Zm11.71 2.29-4 4a1 1 0 0 1-1.42 0l-2-2 1.42-1.42 1.29 1.3 3.29-3.3 1.42 1.42Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-file-text" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm1 7V3.5L18.5 9H15ZM7 12h10v2H7v-2Zm0 4h10v2H7v-2Zm0-8h6v2H7V8Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-credit-card" viewBox="0 0 24 24">
+        <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4H4V6h16v2Zm-9 9H4v-2h7v2Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24">
+        <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5L4 8V6l8 5 8-5v2Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <path d="M19.14 12.94a7.73 7.73 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.07 7.07 0 0 0-1.63-.95l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54a7.07 7.07 0 0 0-1.63.95l-2.39-.96a.5.5 0 0 0-.6.22L2.7 7.5a.5.5 0 0 0 .12.64l2.03 1.58a7.73 7.73 0 0 0 0 1.88L2.82 14.5a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.05.7 1.63.95l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.25 1.13-.57 1.63-.95l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.56ZM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6v-2Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.04 1.04 3.75 3.75 1.04-1.04Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-user-plus" viewBox="0 0 24 24">
+        <path d="M15 12c2.21 0 4-1.79 4-4S17.21 4 15 4s-4 1.79-4 4 1.79 4 4 4Zm-9-1V8H4v3H1v2h3v3h2v-3h3v-2H6Zm9 3c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-send" viewBox="0 0 24 24">
+        <path d="M2 21 23 12 2 3v7l15 2-15 2v7Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24">
+        <path d="M5 20h14v-2H5v2Zm7-18-5.5 5.5 1.42 1.42L11 6.84V16h2V6.84l3.08 3.08 1.42-1.42L12 2Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-receipt" viewBox="0 0 24 24">
+        <path d="M19 2H5a2 2 0 0 0-2 2v18l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V4a2 2 0 0 0-2-2Zm-2 14H7v-2h10v2Zm0-4H7v-2h10v2Zm0-4H7V6h10v2Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-compose" viewBox="0 0 24 24">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.04 1.04 3.75 3.75 1.04-1.04Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 1 0 14 15.5l.27.28v.79L20 21.5 21.5 20l-6-6Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M12.74 2a9 9 0 1 0 9.26 11.26 7 7 0 0 1-9.26-9.26Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <path d="M6.76 4.84 5.34 3.42 3.92 4.84 5.34 6.26 6.76 4.84ZM1 13h3v-2H1v2Zm10 10h2v-3h-2v3Zm9-10v-2h3v2h-3Zm-2.34-8.16 1.42-1.42-1.42-1.42-1.42 1.42 1.42 1.42ZM17.66 20.58l1.42 1.42 1.42-1.42-1.42-1.42-1.42 1.42ZM4.84 17.24 3.42 18.66l1.42 1.42 1.42-1.42-1.42-1.42ZM12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24">
+        <path d="M3 13h4v8H3v-8Zm7-6h4v14h-4V7Zm7 3h4v11h-4V10Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-archive" viewBox="0 0 24 24">
+        <path d="M20 3H4a2 2 0 0 0-2 2v2h20V5a2 2 0 0 0-2-2Zm2 6H2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9ZM12 12l4 4h-3v4h-2v-4H8l4-4Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24">
+        <path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-panel-left" viewBox="0 0 24 24">
+        <path d="M3 4h18v16H3V4Zm2 2v12h5V6H5Zm7 0v12h7V6h-7Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24">
+        <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10ZM7 12h5v5H7v-5Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24">
+        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-log-out" viewBox="0 0 24 24">
+        <path d="m17 7-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5ZM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24">
+        <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24L13 9h6V3l-1.35 3.35Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-book" viewBox="0 0 24 24">
+        <path d="M18 2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10V2ZM6 4h-.5A1.5 1.5 0 0 0 4 5.5v13A2.5 2.5 0 0 1 6.5 20H6V4Zm2 0v16h8V4H8Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-reply" viewBox="0 0 24 24">
+        <path d="M9 17 4 12l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 18v-2a4 4 0 0 0-4-4H4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    </svg>
+
+    <!-- Command palette -->
+    <div class="cmdk hidden" id="cmdk" role="dialog" aria-modal="true" aria-label="Recherche">
+      <div class="cmdk-backdrop" data-cmdk-close></div>
+      <div class="cmdk-panel" role="document">
+        <div class="cmdk-head">
+          <div class="cmdk-icon">
+            <svg aria-hidden="true"><use href="#i-search"></use></svg>
+          </div>
+          <input id="cmdkInput" class="cmdk-input" type="search" placeholder="Rechercher une page, une action…" />
+          <span class="cmdk-kbd">Ctrl K</span>
+        </div>
+        <div class="cmdk-body" id="cmdkList"></div>
+        <div class="cmdk-foot">
+          <span>Entrée pour ouvrir · Échap pour fermer</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal : Demander l'activation d'un module WalahaStore -->
+    <div class="modal hidden" id="modalStoreRequest" role="dialog" aria-modal="true" aria-label="Demander l'activation d'un module">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-plus"></use></svg></div>
+            <div>
+              <div class="modal-h">Demander l'activation</div>
+              <div class="modal-sub">Module : <strong id="storeRequestModuleName">—</strong>. La Walaha Team confirmera le prix et les conditions.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="storeRequestForm" method="post" action="#">
+          <div class="field">
+            <label>Message (optionnel)</label>
+            <textarea name="note" rows="3" placeholder="Précisez votre besoin ou une question sur ce module…"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+              Envoyer la demande
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Ajouter une classe -->
+    <div class="modal hidden" id="modalAddClass" role="dialog" aria-modal="true" aria-label="Ajouter une classe">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-grid"></use></svg></div>
+            <div>
+              <div class="modal-h">Ajouter une classe</div>
+              <div class="modal-sub">Créer une classe pour votre école (visible uniquement par votre établissement).</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="addClassForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field">
+              <label>Nom de la classe</label>
+              <input name="name" required placeholder="Ex. 6ème Année A" />
+            </div>
+            <div class="field">
+              <label>Niveau</label>
+              <input name="level" placeholder="Ex. 6ème" />
+            </div>
+            <div class="field">
+              <label>Année scolaire</label>
+              <input name="academicYear" placeholder="Ex. 2025-2026" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+              Créer la classe
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Inscrire un élève -->
+    <div class="modal hidden" id="modalAddStudent" role="dialog" aria-modal="true" aria-label="Inscrire un élève">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></div>
+            <div>
+              <div class="modal-h">Inscrire un élève</div>
+              <div class="modal-sub">Ajouter un élève dans la base de votre école (RLS : accès limité à votre école).</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="addStudentForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field">
+              <label>Prénom</label>
+              <input name="firstName" required placeholder="Ex. Awa" />
+            </div>
+            <div class="field">
+              <label>Nom</label>
+              <input name="lastName" placeholder="Ex. Traoré" />
+            </div>
+            <div class="field">
+              <label>Classe</label>
+              <select name="classId" id="studentClassSelect">
+                <option value="">— Non assigné —</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Genre</label>
+              <select name="gender">
+                <option value="">—</option>
+                <option value="F">F</option>
+                <option value="M">M</option>
+                <option value="other">Autre</option>
+                <option value="unknown">Inconnu</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Code élève (optionnel)</label>
+              <input name="studentCode" placeholder="Ex. ELV-2026-..." />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-user-plus"></use></svg></span>
+              Inscrire
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Lier un membre (code Walaha) -->
+    <div class="modal hidden" id="modalInviteStaff" role="dialog" aria-modal="true" aria-label="Lier un membre">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-user-plus"></use></svg></div>
+            <div>
+              <div class="modal-h">Lier un membre</div>
+              <div class="modal-sub">Demandez le <strong>code unique Walaha</strong> du membre (visible dans son profil WalahaTracker). Enseignants : <code>ENS-…</code> · Personnel / parent : <code>PAR-…</code></div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="inviteStaffForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Code Walaha du membre</label>
+              <input name="memberCode" required placeholder="Ex. ENS-DIALLO-M-38472" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <p class="field-hint">Le membre doit avoir créé son profil et s'être connecté au moins une fois dans l'app.</p>
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Rôle PWE</label>
+              <select name="role" required>
+                <option value="teacher">Enseignant</option>
+                <option value="class_master">Maître de classe</option>
+                <option value="school_secretary">Secrétaire</option>
+                <option value="school_accountant">Comptable</option>
+                <option value="school_staff">Personnel</option>
+                <option value="school_director">Directeur</option>
+                <option value="school_owner">Promoteur</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-user-plus"></use></svg></span>
+              Lier à l'école
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Modifier profil école -->
+    <div class="modal hidden" id="modalEditProfile" role="dialog" aria-modal="true" aria-label="Modifier le profil">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-building"></use></svg></div>
+            <div>
+              <div class="modal-h">Modifier le profil</div>
+              <div class="modal-sub">Nom, coordonnées et présentation. Le <strong>code ECO-</strong> est fixe et ne peut pas être modifié.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="editProfileForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field">
+              <label>Code école</label>
+              <input name="schoolCode" readonly class="input-readonly" tabindex="-1" aria-readonly="true" />
+            </div>
+            <div class="field">
+              <label>Nom de l'établissement</label>
+              <input name="name" required placeholder="Ex. École Faso Kanu" />
+            </div>
+            <div class="field">
+              <label>Ville</label>
+              <input name="city" placeholder="Ex. Bamako" />
+            </div>
+            <div class="field">
+              <label>Téléphone</label>
+              <input name="phone" placeholder="+223 …" />
+            </div>
+            <div class="field">
+              <label>Email contact</label>
+              <input name="email" type="email" placeholder="contact@ecole.ml" />
+            </div>
+            <div class="field">
+              <label>Commune</label>
+              <input name="commune" placeholder="Ex. Hippodrome" />
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Adresse</label>
+              <input name="address" placeholder="Rue, porte…" />
+            </div>
+            <div class="field">
+              <label>Directeur</label>
+              <input name="director" placeholder="Nom du directeur" />
+            </div>
+            <div class="field">
+              <label>Promoteur</label>
+              <input name="promoter" placeholder="Nom du promoteur" />
+            </div>
+            <div class="field">
+              <label>Année scolaire</label>
+              <input name="academicYear" placeholder="2025-2026" />
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Description</label>
+              <textarea name="description" rows="3" placeholder="Présentation de l'établissement…"></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Publier bulletins -->
+    <div class="modal hidden" id="modalPublishReports" role="dialog" aria-modal="true" aria-label="Publier les bulletins">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-upload"></use></svg></div>
+            <div>
+              <div class="modal-h">Publier les bulletins</div>
+              <div class="modal-sub">Passe tous les bulletins <code>draft</code> / <code>ready</code> au statut <code>published</code>.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="publishReportsForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field">
+              <label>Période (optionnel)</label>
+              <input name="period" placeholder="Ex. T2" />
+            </div>
+            <div class="field">
+              <label>Année scolaire (optionnel)</label>
+              <input name="academicYear" placeholder="2025-2026" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Publier maintenant</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Ajouter bulletin -->
+    <div class="modal hidden" id="modalAddReport" role="dialog" aria-modal="true" aria-label="Ajouter un bulletin">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-file-text"></use></svg></div>
+            <div>
+              <div class="modal-h">Ajouter un bulletin</div>
+              <div class="modal-sub">Saisie simplifiée — notes détaillées par matière en phase ultérieure.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="addReportForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Élève</label>
+              <select name="studentId" id="reportStudentSelect" required>
+                <option value="">— Choisir un élève —</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Période</label>
+              <input name="period" required placeholder="Ex. T2" />
+            </div>
+            <div class="field">
+              <label>Année scolaire</label>
+              <input name="academicYear" placeholder="2025-2026" />
+            </div>
+            <div class="field">
+              <label>Moyenne</label>
+              <input name="average" type="number" step="0.01" min="0" max="20" placeholder="14.5" />
+            </div>
+            <div class="field">
+              <label>Statut initial</label>
+              <select name="status">
+                <option value="draft">Brouillon</option>
+                <option value="ready">Prêt à publier</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Appréciation</label>
+              <textarea name="appreciation" rows="2" placeholder="Travail satisfaisant…"></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Créer le bulletin</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Enregistrer paiement -->
+    <div class="modal hidden" id="modalRecordFee" role="dialog" aria-modal="true" aria-label="Enregistrer un paiement">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-receipt"></use></svg></div>
+            <div>
+              <div class="modal-h">Enregistrer un paiement</div>
+              <div class="modal-sub">Marquer une ligne impayée comme payée, ou créer une nouvelle ligne.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="recordFeeForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Ligne impayée existante</label>
+              <select name="feeId" id="feeSelect">
+                <option value="">— Nouvelle ligne —</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Élève (si nouvelle ligne)</label>
+              <select name="studentId" id="feeStudentSelect">
+                <option value="">— Choisir —</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Montant (FCFA)</label>
+              <input name="amount" type="number" min="0" step="1" placeholder="45000" />
+            </div>
+            <div class="field">
+              <label>Statut</label>
+              <select name="status">
+                <option value="paid">Payé</option>
+                <option value="partial">Partiel</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Nouveau message -->
+    <div class="modal hidden" id="modalComposeMessage" role="dialog" aria-modal="true" aria-label="Nouveau message">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-mail"></use></svg></div>
+            <div>
+              <div class="modal-h">Nouveau message</div>
+              <div class="modal-sub">Annonce aux parents de votre école (visible dans le PWE ; sync app parent à venir).</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="composeMessageForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Sujet</label>
+              <input name="subject" required placeholder="Ex. Réunion parents 6ème" />
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Type</label>
+              <select name="audience">
+                <option value="all_parents">Annonce générale</option>
+                <option value="report_notice">Information bulletin</option>
+                <option value="payment_reminder">Rappel de paiement</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Message</label>
+              <textarea name="body" rows="4" required placeholder="Contenu du message…"></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Envoyer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Modifier classe -->
+    <div class="modal hidden" id="modalEditClass" role="dialog" aria-modal="true" aria-label="Modifier la classe">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-grid"></use></svg></div>
+            <div>
+              <div class="modal-h">Modifier la classe</div>
+              <div class="modal-sub">Mettre à jour les informations ou archiver la classe.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="editClassForm" method="post" action="#">
+          <input type="hidden" name="classId" />
+          <div class="form-grid">
+            <div class="field">
+              <label>Nom de la classe</label>
+              <input name="name" required />
+            </div>
+            <div class="field">
+              <label>Niveau</label>
+              <input name="level" />
+            </div>
+            <div class="field">
+              <label>Année scolaire</label>
+              <input name="academicYear" />
+            </div>
+            <div class="field">
+              <label>Statut</label>
+              <select name="status">
+                <option value="active">Active</option>
+                <option value="archived">Archivée</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Modifier élève -->
+    <div class="modal hidden" id="modalEditStudent" role="dialog" aria-modal="true" aria-label="Modifier l'élève">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></div>
+            <div>
+              <div class="modal-h">Modifier l'élève</div>
+              <div class="modal-sub">Mettre à jour la fiche ou changer le statut (archivé, transféré…).</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="editStudentForm" method="post" action="#">
+          <input type="hidden" name="studentId" />
+          <div class="form-grid">
+            <div class="field">
+              <label>Prénom</label>
+              <input name="firstName" required />
+            </div>
+            <div class="field">
+              <label>Nom</label>
+              <input name="lastName" />
+            </div>
+            <div class="field">
+              <label>Classe</label>
+              <select name="classId" id="editStudentClassSelect">
+                <option value="">— Non assigné —</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Genre</label>
+              <select name="gender">
+                <option value="">—</option>
+                <option value="F">F</option>
+                <option value="M">M</option>
+                <option value="other">Autre</option>
+                <option value="unknown">Inconnu</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Code élève</label>
+              <input name="studentCode" />
+            </div>
+            <div class="field">
+              <label>Statut</label>
+              <select name="status">
+                <option value="active">Actif</option>
+                <option value="suspended">Suspendu</option>
+                <option value="transferred">Transféré</option>
+                <option value="graduated">Diplômé</option>
+                <option value="archived">Archivé</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Lier des parents à un élève -->
+    <div class="modal hidden" id="modalLinkStudentParent" role="dialog" aria-modal="true" aria-label="Lier des parents">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel modal-panel--wide" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></div>
+            <div>
+              <div class="modal-h">Parents liés</div>
+              <div class="modal-sub" id="linkStudentParentSubtitle">Liez un ou plusieurs profils parent <code>PAR-…</code> à cet élève.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="linkStudentParentId" value="" />
+          <div class="parent-link-section">
+            <p class="parent-link-section-title">Parents actuellement liés</p>
+            <ul class="parent-link-list" id="linkStudentParentList">
+              <li class="parent-link-empty">Chargement…</li>
+            </ul>
+          </div>
+          <form id="linkStudentParentForm" method="post" action="#">
+            <p class="parent-link-section-title">Ajouter un parent</p>
+            <div class="form-grid">
+              <div class="field" style="grid-column: 1 / -1;">
+                <label>Code Walaha du parent</label>
+                <input name="parentCode" required placeholder="Ex. PAR-DIALLO-F-12003" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+                <p class="field-hint">Le parent doit avoir créé son profil PAR- dans WalahaTracker et s'y être connecté au moins une fois.</p>
+              </div>
+              <div class="field">
+                <label>Lien familial</label>
+                <select name="relationship">
+                  <option value="mother">Mère</option>
+                  <option value="father">Père</option>
+                  <option value="guardian" selected>Tuteur / Responsable</option>
+                  <option value="other">Autre</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn secondary-btn" data-modal-close>Fermer</button>
+              <button type="submit" class="btn primary-action">
+                <span class="btn-ico"><svg aria-hidden="true"><use href="#i-user-plus"></use></svg></span>
+                Lier ce parent
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/mock-data.js?v=20260623-33"></script>
+    <script src="js/supabase-config.js?v=20260623-33"></script>
+    <script src="js/pwe-api.js?v=20260623-33"></script>
+    <script src="js/pwe.js?v=20260623-33"></script>
+  </body>
+</html>

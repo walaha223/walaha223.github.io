@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Walaha Admin Center</title>
+    <meta name="description" content="Walaha Admin Center est l'espace interne de supervision, moderation et validation de WalahaTracker.">
+    <link rel="icon" href="../logos/logo-symbol.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/wac.css">
+  </head>
+  <body>
+    <div class="login-view" id="loginView">
+      <main class="login-shell">
+        <section class="login-panel">
+          <div class="login-brand">
+            <img src="../logos/logo-symbol.png" alt="" width="34" height="58">
+            <div>
+              <strong>Walaha Admin Center</strong>
+              <span>Acces interne Walaha Team</span>
+            </div>
+          </div>
+          <form id="loginForm" class="login-form">
+            <label for="adminEmail">Email admin</label>
+            <input id="adminEmail" name="email" type="email" autocomplete="email" required>
+            <label for="adminPassword">Mot de passe</label>
+            <input id="adminPassword" name="password" type="password" autocomplete="current-password" required>
+            <button type="submit">Entrer dans WAC</button>
+            <button class="forgot-button" id="forgotPasswordButton" type="button">Mot de passe oublié ?</button>
+            <p id="loginStatus" role="status" aria-live="polite"></p>
+          </form>
+          <form id="resetPasswordForm" class="login-form is-hidden">
+            <p class="reset-copy">Choisissez un nouveau mot de passe pour votre compte admin.</p>
+            <label for="newPassword">Nouveau mot de passe</label>
+            <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="8" required>
+            <label for="confirmPassword">Confirmer le mot de passe</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required>
+            <button type="submit">Mettre à jour le mot de passe</button>
+            <button class="forgot-button" id="backToLoginButton" type="button">Retour à la connexion</button>
+            <p id="resetPasswordStatus" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop is-hidden" id="forgotPasswordModal" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle">
+      <section class="modal-card">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Compte admin</p>
+            <h2 id="forgotPasswordTitle">Mot de passe oublié</h2>
+          </div>
+          <button class="icon-button" id="closeForgotModalButton" type="button" aria-label="Fermer">×</button>
+        </div>
+        <form id="forgotPasswordForm" class="modal-form">
+          <p>Entrez l’email de votre compte Walaha Admin Center. Si le compte existe, Supabase enverra un lien de réinitialisation.</p>
+          <label for="forgotEmail">Email admin</label>
+          <input id="forgotEmail" name="forgotEmail" type="email" autocomplete="email" required>
+          <div class="modal-actions">
+            <button class="secondary-action" id="cancelForgotModalButton" type="button">Annuler</button>
+            <button class="primary-action" type="submit">Envoyer le lien</button>
+          </div>
+          <p id="forgotPasswordStatus" class="modal-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop is-hidden" id="actionModal" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+      <section class="modal-card">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow" id="actionModalEyebrow">Action sensible</p>
+            <h2 id="actionModalTitle">Confirmer</h2>
+          </div>
+          <button class="icon-button" id="actionModalClose" type="button" aria-label="Fermer">×</button>
+        </div>
+        <form id="actionModalForm" class="modal-form">
+          <p id="actionModalDescription"></p>
+          <div id="actionModalDetails" class="detail-list"></div>
+          <div id="actionModalFields" class="field-list"></div>
+          <div id="actionModalReasonWrap">
+            <label for="actionModalReason" id="actionModalReasonLabel">Motif / note interne</label>
+            <textarea id="actionModalReason" name="reason" rows="3"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button class="secondary-action" id="actionModalCancel" type="button">Annuler</button>
+            <button class="primary-action" id="actionModalConfirm" type="submit">Confirmer</button>
+          </div>
+          <p id="actionModalStatus" class="modal-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </div>
+
+    <div class="admin-shell is-hidden" id="adminShell">
+      <aside class="sidebar">
+        <a class="brand" href="#dashboard" data-route="dashboard">
+          <img src="../logos/logo-symbol.png" alt="" width="28" height="48">
+          <span><strong>Walaha</strong><small>Admin Center</small></span>
+        </a>
+        <nav class="side-nav" aria-label="Navigation admin">
+          <a class="is-active" href="#dashboard" data-route="dashboard" data-icon="◆">Dashboard</a>
+          <a href="#schools" data-route="schools" data-icon="⌂">Ecoles</a>
+          <a href="#users" data-route="users" data-icon="◎">Utilisateurs</a>
+          <a href="#tutors" data-route="tutors" data-icon="✦">Repetiteurs</a>
+          <a href="#games" data-route="games" data-icon="▶">Jeux educatifs</a>
+          <a href="#store" data-route="store" data-icon="✚">WalahaStore</a>
+          <a href="#reports" data-route="reports" data-icon="!">Signalements</a>
+          <a href="#payments" data-route="payments" data-icon="₣">Paiements</a>
+          <a href="#logs" data-route="logs" data-icon="⌁">Audit logs</a>
+          <a href="#settings" data-route="settings" data-icon="⚙">Parametres</a>
+        </nav>
+        <div class="security-note">
+          <strong>Acces restreint</strong>
+          <span>Actions sensibles via serveur + audit obligatoire.</span>
+        </div>
+      </aside>
+
+      <div class="workspace">
+        <header class="topbar">
+          <button class="menu-button" type="button" id="menuButton" aria-label="Ouvrir le menu">
+            <span></span><span></span><span></span>
+          </button>
+          <div>
+            <p class="eyebrow">Walaha Team only</p>
+            <h1 id="pageTitle">Dashboard general</h1>
+          </div>
+          <div class="top-actions">
+            <span class="live-pill"><span></span>Live Supabase</span>
+            <span class="role-pill">super_admin</span>
+            <button type="button" id="logoutButton">Deconnexion</button>
+          </div>
+        </header>
+
+        <main class="content">
+          <section class="view is-active" id="view-dashboard" data-title="Dashboard general">
+            <div class="metrics-grid">
+              <article class="metric-card"><span>Ecoles actives</span><strong>42</strong><small>+8 en attente</small></article>
+              <article class="metric-card"><span>Eleves inscrits</span><strong>3 850</strong><small>Donnees sensibles</small></article>
+              <article class="metric-card"><span>Parents lies</span><strong>2 100</strong><small>Comptes actifs</small></article>
+              <article class="metric-card"><span>Signalements ouverts</span><strong>7</strong><small>2 haute priorite</small></article>
+              <article class="metric-card"><span>Repetiteurs en attente</span><strong>18</strong><small>Validation requise</small></article>
+              <article class="metric-card"><span>Suivi paiements</span><strong>0</strong><small>Dossiers financiers</small></article>
+            </div>
+            <div class="dashboard-grid">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Files de validation</h2>
+                  <button type="button" data-route="schools">Voir ecoles</button>
+                </div>
+                <div class="queue-list" id="validationQueue"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Activites recentes</h2>
+                  <button type="button" data-route="logs">Voir logs</button>
+                </div>
+                <div class="activity-list" id="recentActivity"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" id="view-schools" data-title="Gestion et validation des ecoles">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Demandes ECO-</p>
+                <h2>Ecoles</h2>
+              </div>
+              <button type="button" class="primary-action">Creer ecole officielle</button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Rechercher une ecole, ville, code ECO..." data-search="schools">
+              <select data-filter="schools">
+                <option value="all">Tous les statuts</option>
+                <option value="pending_review">En attente</option>
+                <option value="active">Active</option>
+                <option value="verified">Verifiee</option>
+                <option value="rejected">Refusee</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Ecole</th><th>Ville</th><th>Contact</th><th>Demandeur</th><th>Statut</th><th>Action</th></tr></thead>
+                <tbody id="schoolsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="view" id="view-users" data-title="Gestion des utilisateurs">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Comptes</p>
+                <h2>Utilisateurs</h2>
+              </div>
+              <button type="button" class="secondary-action" data-export="users">Exporter CSV</button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Rechercher nom, role ou ville..." data-search="users">
+              <select data-filter="users">
+                <option value="all">Tous les statuts</option>
+                <option value="active">Actif</option>
+                <option value="pending">En attente</option>
+                <option value="suspended">Suspendu</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Utilisateur</th><th>Role</th><th>Ville</th><th>Relation</th><th>Statut</th><th>Action</th></tr></thead>
+                <tbody id="usersTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="view" id="view-tutors" data-title="Moderation des repetiteurs">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Offres cours prives</p>
+                <h2>Repetiteurs</h2>
+              </div>
+              <button type="button" class="secondary-action" data-route="reports">Voir signalements</button>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Repetiteur</th><th>Matieres</th><th>Zone</th><th>Prix</th><th>Statut</th><th>Action</th></tr></thead>
+                <tbody id="tutorsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="view" id="view-games" data-title="Gestion des jeux educatifs">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">WalahaPlay</p>
+                <h2>Jeux educatifs</h2>
+              </div>
+              <button type="button" class="primary-action" data-act="game.create">Ajouter un jeu</button>
+            </div>
+            <div class="cards-grid" id="gamesGrid"></div>
+          </section>
+
+          <section class="view" id="view-store" data-title="WalahaStore — modules et activations">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Boutique modules</p>
+                <h2>Catalogue WalahaStore</h2>
+              </div>
+              <button type="button" class="primary-action" data-act="module.create">Créer un module</button>
+            </div>
+            <div class="metrics-grid" id="storeMetrics"></div>
+            <div class="cards-grid" id="storeModulesGrid"></div>
+            <div class="module-head store-subhead">
+              <div>
+                <p class="eyebrow">Activations</p>
+                <h2>Demandes d'activation</h2>
+              </div>
+              <button type="button" class="secondary-action" data-export="storeRequests">Exporter CSV</button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Rechercher module, ecole, statut..." data-search="store">
+              <select data-filter="store">
+                <option value="all">Tous les statuts</option>
+                <option value="requested">Demande</option>
+                <option value="approved">Approuvee</option>
+                <option value="active">Active</option>
+                <option value="rejected">Refusee</option>
+                <option value="suspended">Suspendue</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Module</th><th>Ecole</th><th>Demande par</th><th>Prix</th><th>Statut</th><th>Action</th></tr></thead>
+                <tbody id="storeRequestsTable"></tbody>
+              </table>
+            </div>
+            <div class="module-head store-subhead">
+              <div>
+                <p class="eyebrow">Sur devis</p>
+                <h2>Demandes de modules personnalises</h2>
+              </div>
+              <button type="button" class="secondary-action" data-export="storeCustom">Exporter CSV</button>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Demande</th><th>Ecole</th><th>Demande par</th><th>Statut</th><th>Action</th></tr></thead>
+                <tbody id="storeCustomTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="view" id="view-reports" data-title="Gestion des signalements">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Moderation</p>
+                <h2>Signalements</h2>
+              </div>
+              <button type="button" class="secondary-action" data-export="reports">Exporter CSV</button>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Type</th><th>Cible</th><th>Priorite</th><th>Statut</th><th>Assigne</th><th>Action</th></tr></thead>
+                <tbody id="reportsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="view" id="view-payments" data-title="Suivi des paiements">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Finance interne</p>
+                <h2>Paiements scolaires numériques</h2>
+              </div>
+              <button type="button" class="secondary-action" data-export="payments">Exporter CSV</button>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Ecole</th><th>Annee</th><th>Eleves factures</th><th>Montant</th><th>Statut</th><th>Action</th></tr></thead>
+                <tbody id="paymentsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="view" id="view-logs" data-title="Journal d'audit">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Traçabilite</p>
+                <h2>Audit logs</h2>
+              </div>
+              <button type="button" class="secondary-action" data-export="logs">Exporter CSV</button>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Rechercher action, cible, admin, motif..." data-search="logs">
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Action</th><th>Cible</th><th>Admin</th><th>Raison</th><th>Date</th></tr></thead>
+                <tbody id="logsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="view" id="view-settings" data-title="Parametres admin">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Walaha Team</p>
+                <h2>Membres internes</h2>
+              </div>
+              <button type="button" class="primary-action is-hidden" id="addMemberButton" data-act="member.add">Ajouter un membre</button>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Membre</th><th>Role</th><th>Statut</th><th>Depuis</th><th>Action</th></tr></thead>
+                <tbody id="membersTable"></tbody>
+              </table>
+            </div>
+            <div class="settings-grid">
+              <article class="panel">
+                <h2>Roles internes</h2>
+                <div class="role-list" id="rolesList"></div>
+              </article>
+              <article class="panel">
+                <h2>Regles critiques</h2>
+                <ul class="policy-list">
+                  <li>Pas d'acces admin sans `admin_members` actif.</li>
+                  <li>Pas de cle Supabase sensible cote frontend.</li>
+                  <li>Validation ecole, paiement et roles via serveur.</li>
+                  <li>Toute action sensible doit creer un audit log.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/wac.js"></script>
+  </body>
+</html>
