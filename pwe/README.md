@@ -73,6 +73,7 @@ Données fictives (`js/mock-data.js`), lecture seule. Aucune écriture en base.
 | `#reports` | Bulletins |
 | `#fees` | Frais scolaires |
 | `#messages` | Messages parents |
+| `#homework` | Devoirs (module WalahaStore — verrouillé si non activé) |
 | `#store` | WalahaStore (catalogue + demandes d'activation) |
 | `#settings` | Paramètres |
 | `#statistics` | Statistiques école |
@@ -128,6 +129,14 @@ Catalogue des modules premium activables par l'école (lecture de `store_modules
 - L'approbation puis l'activation se font côté Walaha Team (WAC).
 - Migration requise (même projet) : `walaha.net/wac/supabase/20250625000100_walaha_store.sql`.
 - En démo (`?demo=1`), le catalogue s'affiche mais la demande est désactivée (lecture seule).
+
+## Module « Devoirs » (page `#homework`)
+
+Premier vrai module WalahaStore (payant). La page est **verrouillée** tant que l'école n'a pas un abonnement actif au module `homework` (vérifié via `isModuleActive`) : elle affiche un état « non activé » avec un lien vers WalahaStore. Une fois actif, le personnel pédagogique peut **créer / lister / archiver** des devoirs par classe (matière, consignes, échéance).
+
+- Paywall appliqué aussi côté serveur : RLS `school_homework` exige `school_has_active_module(school_id, 'homework')` pour l'écriture.
+- Migration : `walaha.net/wac/supabase/20250625000300_homework_module.sql`.
+- En démo, le module est considéré actif (avec données fictives) pour visualiser l'UI.
 
 ## Structure
 

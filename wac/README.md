@@ -24,6 +24,8 @@ Migrations a appliquer dans l'ordre :
 4. `supabase/20250624000300_wac_members_games.sql` — lecture de tous les membres + INSERT jeux educatifs.
 5. `supabase/20250624000400_wac_user_moderation.sql` — table `user_moderation` (statut des comptes).
 6. `supabase/20250625000100_walaha_store.sql` — WalahaStore : `store_modules` + `store_subscriptions` + RLS + seed 7 modules MVP.
+7. `supabase/20250625000200_store_custom_requests.sql` — WalahaStore : demandes de modules personnalisés (sur devis).
+8. `supabase/20250625000300_homework_module.sql` — 1er module réel « Devoirs » (`school_homework`) + verrou paywall `school_has_active_module()`.
 
 Edge Functions (a deployer depuis le projet WalahaTracker, meme projet Supabase) :
 
@@ -44,7 +46,7 @@ Actions operationnelles (chacune ecrit dans `admin_audit_logs`) :
 
 Exports CSV (boutons « Exporter CSV ») : utilisateurs, paiements, signalements, audit logs, activations WalahaStore.
 
-WalahaStore (onglet dedie) : catalogue de modules (creer / desactiver / reactiver) et file des demandes d'activation des ecoles (approuver -> activer / refuser / suspendre), chaque action tracee. Cote PWE, l'ecole consultera le catalogue et demandera l'activation (a construire).
+WalahaStore (onglet dedie) : bandeau revenus (modules actifs, revenu estime, demandes en attente), catalogue de modules (creer / desactiver / reactiver), file des demandes d'activation (approuver -> activer / refuser / suspendre) et file des demandes sur devis (etudier / devis / clore / rejeter). Chaque action tracee + export CSV. Cote PWE, l'ecole consulte le catalogue, demande l'activation et peut demander un module personnalise.
 
 La vue Ecoles affiche desormais les demandes (`school_requests`) avec un vrai statut, donc le filtre par statut fonctionne. Les ecoles officielles validees restent comptees dans la metrique « Ecoles officielles » (`canonical_schools`).
 

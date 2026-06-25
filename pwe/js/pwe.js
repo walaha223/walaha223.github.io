@@ -34,6 +34,7 @@
           { route: 'students', label: 'Élèves', icon: 'i-users' },
           { route: 'teachers', label: 'Personnel', icon: 'i-user-check' },
           { route: 'reports', label: 'Bulletins', icon: 'i-file-text' },
+          { route: 'homework', label: 'Devoirs', icon: 'i-edit' },
         ],
       },
       {
@@ -75,6 +76,8 @@
   let schoolDrawerOpen = false;
   let storeRequestModuleId = null;
   const storeCache = { modules: null, subs: null };
+  let homeworkCache = null;
+  let trackHomeworkId = null;
 
   const DASH_STAT_META = {
     students: { icon: 'i-users', tone: 'teal', route: 'students' },
@@ -189,6 +192,7 @@
     'students',
     'teachers',
     'reports',
+    'homework',
     'fees',
     'messages',
     'store',
@@ -1906,6 +1910,37 @@
     renderStoreSubs();
   }
 
+  async function renderHomework(session) {
+    const active = await window.PweApi.isModuleActive(session.schoolId, 'homework');
+    $('#homeworkLocked')?.classList.toggle('hidden', active);
+    $('#homeworkContent')?.classList.toggle('hidden', !active);
+    $('#homeworkAddBtn')?.classList.toggle('hidden', !active);
+    if (!active) return;
+
+    const list = await window.PweApi.fetchHomework(session.schoolId);
+    homeworkCache = list;
+    const rows = list.filter((h) => h.status !== 'archived');
+    $('#homeworkTable').innerHTML = rows.length === 0
+      ? `<tr class="empty-row"><td colspan="5">Aucun devoir actif. Cliquez sur « Ajouter un devoir ».</td></tr>`
+      : rows.map((h) => `
+          <tr>
+            <td><strong>${escapeHtml(h.title)}</strong>${h.instructions ? `<div class="hw-instr">${escapeHtml(h.instructions)}</div>` : ''}</td>
+            <td>${escapeHtml(h.subject)}</td>
+            <td>${escapeHtml(h.class)}</td>
+            <td>${escapeHtml(h.due)}</td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="row-action-btn row-action-btn--accent" data-action="homework-track" data-id="${h.id}" title="Suivi des élèves" aria-label="Suivi des élèves">
+                  <svg aria-hidden="true" width="14" height="14"><use href="#i-users"></use></svg>
+                </button>
+                <button type="button" class="row-action-btn" data-action="archive-homework" data-id="${h.id}" title="Archiver" aria-label="Archiver">
+                  <svg aria-hidden="true" width="14" height="14"><use href="#i-archive"></use></svg>
+                </button>
+              </div>
+            </td>
+          </tr>`).join('');
+  }
+
   const RENDERERS = {
     dashboard: renderDashboard,
     statistics: renderStatistics,
@@ -1916,6 +1951,7 @@
     reports: renderReports,
     fees: renderFees,
     messages: renderMessages,
+    homework: renderHomework,
     store: renderStore,
     settings: renderSettings,
   };
@@ -2647,6 +2683,143 @@
     }
   });
 
+  // Devoirs — ouvrir le formulaire (avec la liste des classes).
+  document.getElementById('homeworkAddBtn')?.addEventListener('click', async () => {
+    const session = getSession();
+    if (!session) return;
+    if (!listCache.classes) {
+      listCache.classes = await window.PweApi.fetchClasses(session.schoolId);
+    }
+    const sel = document.getElementById('homeworkClassSelect');
+    if (sel) {
+      sel.innerHTML =
+        '<option value="">Toutes les classes</option>' +
+        (listCache.classes || []).map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    }
+    openModal('modalAddHomework');
+  });
+
+  document.getElementById('addHomeworkForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!requireWritableMode()) return;
+    const session = getSession();
+    if (!session) return;
+    const form = e.target;
+    setFormBusy(form, true);
+    const fd = new FormData(form);
+    try {
+      const result = await window.PweApi.createHomework({
+        schoolId: session.schoolId,
+        classId: fd.get('classId'),
+        subject: fd.get('subject'),
+        title: fd.get('title'),
+        instructions: fd.get('instructions'),
+        dueDate: fd.get('dueDate'),
+      });
+      if (!result.ok) {
+        safeToast('Création impossible', result.error || 'Erreur.');
+        return;
+      }
+      closeModals();
+      form.reset();
+      safeToast('Devoir créé', 'Le devoir a été ajouté pour votre école.');
+      await renderHomework(session);
+    } finally {
+      setFormBusy(form, false);
+    }
+  });
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action="archive-homework"]');
+    if (!btn) return;
+    if (!requireWritableMode()) return;
+    const session = getSession();
+    if (!session) return;
+    const result = await window.PweApi.archiveHomework(btn.dataset.id);
+    if (!result.ok) {
+      safeToast('Archivage impossible', result.error || 'Erreur.');
+      return;
+    }
+    safeToast('Devoir archivé', null);
+    await renderHomework(session);
+  });
+
+  // Devoirs — ouverture du suivi des élèves.
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action="homework-track"]');
+    if (!btn) return;
+    const session = getSession();
+    if (!session) return;
+    trackHomeworkId = btn.dataset.id;
+    const hw = (homeworkCache || []).find((h) => h.id === trackHomeworkId);
+    const titleEl = document.getElementById('homeworkTrackTitle');
+    if (titleEl) titleEl.textContent = hw?.title || 'Suivi des élèves';
+    const body = document.getElementById('homeworkTrackBody');
+    if (body) body.innerHTML = '<p class="store-sub-empty">Chargement…</p>';
+    openModal('modalHomeworkTrack');
+    try {
+      if (!listCache.students) {
+        listCache.students = await window.PweApi.fetchStudents(session.schoolId);
+      }
+      const students = (listCache.students || []).filter(
+        (s) => s.status === 'active' && (!hw?.classId || s.classId === hw.classId)
+      );
+      const subs = await window.PweApi.fetchHomeworkSubmissions(trackHomeworkId);
+      if (body) {
+        body.innerHTML = students.length === 0
+          ? '<p class="store-sub-empty">Aucun élève actif dans cette classe.</p>'
+          : students.map((s) => {
+              const sub = subs[s.id] || {};
+              const st = sub.status || 'assigned';
+              const opt = (v, l) => `<option value="${v}"${st === v ? ' selected' : ''}>${l}</option>`;
+              return `
+                <div class="hw-track-row" data-student-id="${s.id}">
+                  <div class="hw-track-name">${escapeHtml(s.name)}</div>
+                  <select class="hw-track-status" aria-label="Statut">${opt('assigned', 'À faire')}${opt('submitted', 'Rendu')}${opt('corrected', 'Corrigé')}</select>
+                  <input class="hw-track-grade" type="number" step="0.25" min="0" max="20" placeholder="Note" value="${sub.grade != null ? sub.grade : ''}" aria-label="Note" />
+                  <input class="hw-track-feedback" type="text" placeholder="Commentaire" value="${escapeHtml(sub.feedback || '')}" aria-label="Commentaire" />
+                </div>`;
+            }).join('');
+      }
+    } catch (err) {
+      if (body) body.innerHTML = `<p class="store-sub-empty">Erreur de chargement. ${escapeHtml(err?.message || '')}</p>`;
+    }
+  });
+
+  document.getElementById('homeworkTrackForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!requireWritableMode()) return;
+    const session = getSession();
+    if (!session) return;
+    const form = e.target;
+    setFormBusy(form, true);
+    try {
+      const entries = Array.from(document.querySelectorAll('#homeworkTrackBody .hw-track-row')).map((row) => ({
+        studentId: row.dataset.studentId,
+        status: row.querySelector('.hw-track-status').value,
+        grade: row.querySelector('.hw-track-grade').value,
+        feedback: row.querySelector('.hw-track-feedback').value,
+      }));
+      if (entries.length === 0) {
+        closeModals();
+        return;
+      }
+      const result = await window.PweApi.saveHomeworkSubmissions({
+        homeworkId: trackHomeworkId,
+        schoolId: session.schoolId,
+        entries,
+      });
+      if (!result.ok) {
+        safeToast('Enregistrement impossible', result.error || 'Erreur.');
+        return;
+      }
+      closeModals();
+      safeToast('Suivi enregistré', 'Le suivi des élèves a été mis à jour.');
+    } finally {
+      setFormBusy(form, false);
+    }
+  });
+
   // WalahaStore — ouverture de la demande d'activation.
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action="store-request"]');
@@ -2660,6 +2833,38 @@
 
   document.querySelector('[data-search="store"]')?.addEventListener('input', renderStoreCatalog);
   document.querySelector('[data-filter="store"]')?.addEventListener('change', renderStoreCatalog);
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="store-custom-request"]')) {
+      openModal('modalCustomRequest');
+    }
+  });
+
+  document.getElementById('customRequestForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!requireWritableMode()) return;
+    const session = getSession();
+    if (!session) return;
+    const form = e.target;
+    setFormBusy(form, true);
+    const fd = new FormData(form);
+    try {
+      const result = await window.PweApi.submitCustomModuleRequest({
+        schoolId: session.schoolId,
+        title: fd.get('title'),
+        description: fd.get('description'),
+      });
+      if (!result.ok) {
+        safeToast('Demande impossible', result.error || 'Erreur.');
+        return;
+      }
+      closeModals();
+      form.reset();
+      safeToast('Demande envoyée', 'La Walaha Team étudiera votre besoin sur mesure.');
+    } finally {
+      setFormBusy(form, false);
+    }
+  });
 
   document.getElementById('storeRequestForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();

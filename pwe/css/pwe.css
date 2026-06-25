@@ -4478,3 +4478,62 @@ body.sidebar-open .overlay { display: block; }
     grid-template-columns: 1fr;
   }
 }
+
+.store-side-cta p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.store-side-cta .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Devoirs — état verrouillé (module non activé) */
+.store-locked {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--white);
+  border: 1px dashed var(--border-strong);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.store-locked-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(196, 122, 44, 0.10);
+  color: var(--ocre);
+}
+.store-locked-icon svg { width: 22px; height: 22px; }
+.store-locked h3 { margin: 0; }
+.store-locked p { margin: 0 0 8px; color: var(--muted); max-width: 440px; }
+.hw-instr { margin-top: 3px; color: var(--muted); font-size: 12px; }
+
+/* Suivi des devoirs par élève */
+.modal-panel--wide { width: min(680px, 96vw); }
+.hw-track-list {
+  display: grid;
+  gap: 8px;
+  max-height: 56vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.hw-track-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1.4fr) 120px 90px minmax(120px, 1.6fr);
+  gap: 8px;
+  align-items: center;
+}
+.hw-track-name { font-weight: 700; font-size: 13px; }
+.hw-track-row select,
+.hw-track-row input { min-height: 38px; }
+@media (max-width: 640px) {
+  .hw-track-row { grid-template-columns: 1fr 1fr; }
+  .hw-track-name { grid-column: 1 / -1; }
+}

@@ -147,6 +147,11 @@
                 <span class="nav-ico"><svg aria-hidden="true"><use href="#i-file-text"></use></svg></span>
                 <span class="nav-label">Bulletins</span>
               </a>
+              <a href="#homework" class="nav-link" data-route="homework">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-edit"></use></svg></span>
+                <span class="nav-label">Devoirs</span>
+              </a>
             </div>
 
             <div class="sidebar-group">
@@ -664,6 +669,40 @@
             </div>
           </section>
 
+          <!-- Devoirs (module WalahaStore) -->
+          <section class="view" id="view-homework" data-title="Devoirs">
+            <header class="module-hero module-hero--homework">
+              <div class="module-hero-glow" aria-hidden="true"></div>
+              <div class="module-hero-body">
+                <div class="module-hero-copy">
+                  <p class="module-hero-eyebrow">Module WalahaStore</p>
+                  <h2 class="module-hero-title">Devoirs et exercices</h2>
+                  <p class="module-hero-sub">Donnez des devoirs liés à vos classes, avec consignes et échéances.</p>
+                </div>
+                <button type="button" class="btn primary-action hidden" id="homeworkAddBtn">
+                  <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+                  Ajouter un devoir
+                </button>
+              </div>
+            </header>
+
+            <div id="homeworkLocked" class="store-locked">
+              <div class="store-locked-icon"><svg aria-hidden="true"><use href="#i-plus"></use></svg></div>
+              <h3>Module « Devoirs » non activé</h3>
+              <p>Ce module premium n'est pas encore activé pour votre école. Demandez son activation dans WalahaStore.</p>
+              <a class="btn primary-action" href="#store">Voir dans WalahaStore</a>
+            </div>
+
+            <div id="homeworkContent" class="hidden">
+              <div class="table-card">
+                <table>
+                  <thead><tr><th>Devoir</th><th>Matière</th><th>Classe</th><th>Échéance</th><th>Action</th></tr></thead>
+                  <tbody id="homeworkTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
           <!-- WalahaStore -->
           <section class="view" id="view-store" data-title="WalahaStore">
             <header class="module-hero module-hero--store">
@@ -699,6 +738,14 @@
               </div>
 
               <aside class="store-side">
+                <section class="store-side-card store-side-cta">
+                  <h3>Besoin sur mesure ?</h3>
+                  <p>Un module spécifique à votre école ? Demandez une étude personnalisée.</p>
+                  <button type="button" class="btn primary-action" data-action="store-custom-request">
+                    <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+                    Demander un module personnalisé
+                  </button>
+                </section>
                 <section class="store-side-card">
                   <h3>Modules actifs</h3>
                   <ul class="store-sub-list" id="storeActive"></ul>
@@ -939,6 +986,87 @@
       </div>
     </div>
 
+    <!-- Modal : Ajouter un devoir -->
+    <div class="modal hidden" id="modalAddHomework" role="dialog" aria-modal="true" aria-label="Ajouter un devoir">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-edit"></use></svg></div>
+            <div>
+              <div class="modal-h">Ajouter un devoir</div>
+              <div class="modal-sub">Devoir lié à votre école (visible uniquement par votre établissement).</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="addHomeworkForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field">
+              <label>Titre du devoir</label>
+              <input name="title" required placeholder="Ex. Exercices fractions p.42" />
+            </div>
+            <div class="field">
+              <label>Matière</label>
+              <input name="subject" placeholder="Ex. Mathématiques" />
+            </div>
+            <div class="field">
+              <label>Classe</label>
+              <select name="classId" id="homeworkClassSelect">
+                <option value="">Toutes les classes</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Date limite</label>
+              <input name="dueDate" type="date" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Consignes</label>
+            <textarea name="instructions" rows="3" placeholder="Consignes pour les élèves…"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+              Créer le devoir
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Suivi des élèves d'un devoir -->
+    <div class="modal hidden" id="modalHomeworkTrack" role="dialog" aria-modal="true" aria-label="Suivi des élèves">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel modal-panel--wide" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></div>
+            <div>
+              <div class="modal-h">Suivi des élèves</div>
+              <div class="modal-sub">Devoir : <strong id="homeworkTrackTitle">—</strong>. Statut, note et commentaire par élève.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="homeworkTrackForm" method="post" action="#">
+          <div class="hw-track-list" id="homeworkTrackBody"></div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Fermer</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+              Enregistrer le suivi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal : Demander l'activation d'un module WalahaStore -->
     <div class="modal hidden" id="modalStoreRequest" role="dialog" aria-modal="true" aria-label="Demander l'activation d'un module">
       <div class="modal-backdrop" data-modal-close></div>
@@ -959,6 +1087,42 @@
           <div class="field">
             <label>Message (optionnel)</label>
             <textarea name="note" rows="3" placeholder="Précisez votre besoin ou une question sur ce module…"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+              Envoyer la demande
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal : Demander un module personnalisé (sur devis) -->
+    <div class="modal hidden" id="modalCustomRequest" role="dialog" aria-modal="true" aria-label="Demander un module personnalisé">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-plus"></use></svg></div>
+            <div>
+              <div class="modal-h">Module personnalisé</div>
+              <div class="modal-sub">Décrivez votre besoin. La Walaha Team vous répondra avec une étude ou un devis.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="customRequestForm" method="post" action="#">
+          <div class="field">
+            <label>Titre de la demande</label>
+            <input name="title" required placeholder="Ex. Intégration avec notre logiciel de comptabilité" />
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea name="description" rows="4" placeholder="Expliquez le besoin, le contexte et l'objectif…"></textarea>
           </div>
           <div class="modal-actions">
             <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>

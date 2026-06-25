@@ -1226,11 +1226,176 @@
     return { ok: true, id: data?.id };
   }
 
+  async function submitCustomModuleRequest({ schoolId, title, description }) {
+    if (mode === 'demo') {
+      return { ok: false, error: 'Démo locale : la demande sur devis nécessite Supabase.' };
+    }
+    const cleanTitle = String(title || '').trim();
+    if (!schoolId || !cleanTitle) return { ok: false, error: 'Titre de la demande requis.' };
+
+    const c = requireClient();
+    const { data: auth } = await c.auth.getUser();
+    const { data, error } = await c
+      .from('store_custom_requests')
+      .insert({
+        school_id: schoolId,
+        requested_by: auth?.user?.id || null,
+        title: cleanTitle,
+        description: description ? String(description).trim() || null : null,
+        status: 'open',
+      })
+      .select('id')
+      .single();
+
+    if (error) return { ok: false, error: error.message || 'Demande impossible.' };
+    return { ok: true, id: data?.id };
+  }
+
+  async function isModuleActive(schoolId, code) {
+    if (mode === 'demo') return true;
+    if (!schoolId || !code) return false;
+    const c = requireClient();
+    const { data: mod } = await c
+      .from('store_modules')
+      .select('id')
+      .eq('code', code)
+      .maybeSingle();
+    if (!mod) return false;
+    const { count } = await c
+      .from('store_subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId)
+      .eq('module_id', mod.id)
+      .eq('status', 'active');
+    return (count ?? 0) > 0;
+  }
+
+  const DEMO_HOMEWORK = [
+    { id: 'hw-1', subject: 'Mathématiques', title: 'Exercices fractions p.42', instructions: 'Faire les exercices 1 à 6, montrer les calculs.', due: '30/06/2026', dueDate: '2026-06-30', status: 'active', class: '6ème A' },
+    { id: 'hw-2', subject: 'Français', title: 'Rédaction : mon village', instructions: 'Texte de 15 lignes minimum.', due: '28/06/2026', dueDate: '2026-06-28', status: 'active', class: '5ème B' },
+  ];
+
+  async function fetchHomework(schoolId) {
+    if (mode === 'demo') return DEMO_HOMEWORK.map((h) => ({ ...h }));
+
+    const c = requireClient();
+    const { data, error } = await c
+      .from('school_homework')
+      .select('id, subject, title, instructions, due_date, status, class_id, school_classes(name)')
+      .eq('school_id', schoolId)
+      .order('due_date', { ascending: false });
+    if (error) throw error;
+
+    return (data || []).map((h) => ({
+      id: h.id,
+      subject: h.subject || '—',
+      title: h.title,
+      instructions: h.instructions || '',
+      due: h.due_date ? new Date(h.due_date).toLocaleDateString('fr-FR') : '—',
+      dueDate: h.due_date,
+      status: h.status,
+      classId: h.class_id,
+      class: h.school_classes?.name || 'Toutes classes',
+    }));
+  }
+
+  async function createHomework({ schoolId, classId, subject, title, instructions, dueDate }) {
+    if (mode === 'demo') {
+      return { ok: false, error: 'Démo locale : pas d’écriture en base.' };
+    }
+    const cleanTitle = String(title || '').trim();
+    if (!cleanTitle) return { ok: false, error: 'Titre du devoir requis.' };
+
+    const c = requireClient();
+    const { data: auth } = await c.auth.getUser();
+    const { data, error } = await c
+      .from('school_homework')
+      .insert({
+        school_id: schoolId,
+        class_id: classId || null,
+        subject: String(subject || '').trim() || null,
+        title: cleanTitle,
+        instructions: String(instructions || '').trim() || null,
+        due_date: dueDate || null,
+        status: 'active',
+        created_by: auth?.user?.id || null,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      if ((error.message || '').toLowerCase().includes('row-level security')) {
+        return { ok: false, error: 'Module Devoirs non activé pour votre école (WalahaStore).' };
+      }
+      return { ok: false, error: error.message || 'Création impossible.' };
+    }
+    return { ok: true, id: data?.id };
+  }
+
+  async function archiveHomework(id) {
+    if (mode === 'demo') return { ok: false, error: 'Démo locale : pas d’écriture en base.' };
+    if (!id) return { ok: false, error: 'Devoir invalide.' };
+    const c = requireClient();
+    const { error } = await c.from('school_homework').update({ status: 'archived' }).eq('id', id);
+    if (error) return { ok: false, error: error.message || 'Archivage impossible.' };
+    return { ok: true };
+  }
+
+  async function fetchHomeworkSubmissions(homeworkId) {
+    if (mode === 'demo') return {};
+    const c = requireClient();
+    const { data, error } = await c
+      .from('school_homework_submissions')
+      .select('student_id, status, grade, feedback')
+      .eq('homework_id', homeworkId);
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach((s) => {
+      map[s.student_id] = { status: s.status, grade: s.grade, feedback: s.feedback };
+    });
+    return map;
+  }
+
+  async function saveHomeworkSubmissions({ homeworkId, schoolId, entries }) {
+    if (mode === 'demo') {
+      return { ok: false, error: 'Démo locale : pas d’écriture en base.' };
+    }
+    if (!homeworkId || !schoolId || !(entries && entries.length)) {
+      return { ok: false, error: 'Rien à enregistrer.' };
+    }
+    const c = requireClient();
+    const rows = entries.map((e) => ({
+      homework_id: homeworkId,
+      student_id: e.studentId,
+      school_id: schoolId,
+      status: e.status || 'assigned',
+      grade: e.grade != null && e.grade !== '' ? Number(e.grade) : null,
+      feedback: e.feedback ? String(e.feedback).trim() || null : null,
+    }));
+    const { error } = await c
+      .from('school_homework_submissions')
+      .upsert(rows, { onConflict: 'homework_id,student_id' });
+    if (error) {
+      if ((error.message || '').toLowerCase().includes('row-level security')) {
+        return { ok: false, error: 'Module Devoirs non activé pour votre école.' };
+      }
+      return { ok: false, error: error.message || 'Enregistrement impossible.' };
+    }
+    return { ok: true };
+  }
+
   window.PweApi = {
     init,
     fetchStoreModules,
     fetchStoreSubscriptions,
     requestModuleActivation,
+    submitCustomModuleRequest,
+    isModuleActive,
+    fetchHomework,
+    createHomework,
+    archiveHomework,
+    fetchHomeworkSubmissions,
+    saveHomeworkSubmissions,
     getMode,
     isDemo,
     isDemoMode,
