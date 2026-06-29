@@ -51,6 +51,8 @@ const state = {
   pricingConfigs: [],
   parentLinks: [],
   storeStatsPeriod: "month",
+  playAnalytics: null,
+  playAnalyticsDays: 30,
   billingSchemaReady: false,
   playPricingSchemaReady: false,
   counts: {}
@@ -686,6 +688,10 @@ const EXPORTS = {
         prix_moyen_xof: stats.avgPrice ?? ""
       };
     })
+  }),
+  playAnalytics: () => ({
+    name: "walaha-play-analytics.csv",
+    rows: playAnalyticsExportRows()
   }),
   storeRequests: () => ({
     name: "walaha-store-activations.csv",
@@ -1880,8 +1886,9 @@ async function loadData() {
 
   populateLogsAdminFilter();
   refreshLogsFilter();
+  await loadPlayAnalytics();
 
-  // Comptes exacts (totaux réels, non plafonnés à 1000 lignes).
+  // Comptes exacts
   const [schoolsCount, studentsCount, usersCount, tutorsCount, paymentsCount, reportsPendingCount] = await Promise.all([
     countTable("canonical_schools", { isNull: ["deleted_at"] }),
     countTable("canonical_students", { isNull: ["deleted_at"] }),
@@ -2248,6 +2255,103 @@ function renderTutors() {
       <td>${rowBtn("tutor.view", tutor.id, "Ouvrir")}</td>
     </tr>
   `));
+}
+
+function playAnalyticsExportRows() {
+  const data = state.playAnalytics;
+  if (!data) return [];
+  const top = Array.isArray(data.top_activities) ? data.top_activities : [];
+  const daily = Array.isArray(data.daily) ? data.daily : [];
+  return [
+    {
+      type_ligne: "resume",
+      periode_jours: data.period_days,
+      sessions_total: data.total_sessions,
+      sessions_terminees: data.completed,
+      sessions_abandonnees: data.abandoned,
+      taux_completion_pct: data.completion_rate_pct,
+      duree_moyenne_min: data.avg_duration_minutes,
+      note_succes_moyenne: data.avg_success_level
+    },
+    ...top.map((row) => ({
+      type_ligne: "top_activite",
+      activite_id: row.activity_id,
+      titre: row.title,
+      sessions: row.sessions,
+      terminees: row.completed,
+      duree_moyenne_min: row.avg_duration_minutes
+    })),
+    ...daily.map((row) => ({
+      type_ligne: "jour",
+      date: row.day,
+      sessions: row.sessions,
+      terminees: row.completed
+    }))
+  ];
+}
+
+function renderPlayAnalytics() {
+  const metrics = document.getElementById("playAnalyticsMetrics");
+  const topTable = document.getElementById("playAnalyticsTop");
+  const trend = document.getElementById("playAnalyticsTrend");
+  const data = state.playAnalytics;
+  if (!metrics || !topTable || !trend) return;
+
+  if (!data) {
+    metrics.innerHTML = "";
+    topTable.innerHTML = `<tr><td colspan="5">Analytics indisponibles — appliquez la migration Phase K et rechargez.</td></tr>`;
+    trend.innerHTML = "";
+    return;
+  }
+
+  metrics.innerHTML = [
+    ["Sessions", data.total_sessions],
+    ["Taux complétion", `${data.completion_rate_pct}%`],
+    ["Durée moy.", `${data.avg_duration_minutes} min`],
+    ["Note succès", data.avg_success_level],
+    ["Abandons", data.abandoned]
+  ].map(([label, value]) => `
+    <article class="metric-card">
+      <p class="eyebrow">${escapeHtml(label)}</p>
+      <strong>${escapeHtml(String(value))}</strong>
+    </article>
+  `).join("");
+
+  const top = Array.isArray(data.top_activities) ? data.top_activities : [];
+  topTable.innerHTML = top.length
+    ? top.map((row) => `
+      <tr>
+        <td><strong>${text(row.title)}</strong><small>${text(row.activity_id)}</small></td>
+        <td>${row.sessions}</td>
+        <td>${row.completed}</td>
+        <td>${row.avg_duration_minutes ?? "—"}</td>
+        <td>${row.sessions ? Math.round((row.completed / row.sessions) * 100) : 0}%</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5">Aucune session sur la période.</td></tr>`;
+
+  const daily = Array.isArray(data.daily) ? data.daily : [];
+  const max = Math.max(1, ...daily.map((d) => d.sessions || 0));
+  trend.innerHTML = daily.length
+    ? daily.map((d) => {
+        const height = Math.max(8, Math.round(((d.sessions || 0) / max) * 100));
+        return `<div class="store-bar" style="height:${height}%" title="${d.day}: ${d.sessions} session(s)"></div>`;
+      }).join("")
+    : `<p class="dash-task-empty">Pas encore de sessions enregistrées.</p>`;
+}
+
+async function loadPlayAnalytics() {
+  try {
+    const { data, error } = await supabaseClient.rpc("wac_play_analytics", {
+      p_days: state.playAnalyticsDays
+    });
+    if (error) throw error;
+    state.playAnalytics = data;
+  } catch (err) {
+    console.warn("[WAC] play analytics:", err?.message || err);
+    state.playAnalytics = null;
+  }
+  renderPlayAnalytics();
 }
 
 function renderGames() {
@@ -3117,6 +3221,7 @@ function renderAll() {
   renderTutorRequests();
   renderTutors();
   renderGames();
+  renderPlayAnalytics();
   renderReports();
   renderPayments();
   renderLogs();
@@ -3507,6 +3612,16 @@ document.addEventListener("click", (event) => {
     document.querySelectorAll("[data-store-panel]").forEach((panel) => {
       panel.classList.toggle("is-active", panel.dataset.storePanel === storeTab.dataset.storeTab);
     });
+    return;
+  }
+
+  const playPeriod = event.target.closest("[data-play-period]");
+  if (playPeriod) {
+    state.playAnalyticsDays = Number(playPeriod.dataset.playPeriod || 30);
+    document.querySelectorAll("[data-play-period]").forEach((button) => {
+      button.classList.toggle("is-active", button === playPeriod);
+    });
+    loadPlayAnalytics();
     return;
   }
 
