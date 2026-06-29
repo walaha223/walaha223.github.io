@@ -1883,6 +1883,13 @@ h2 {
   margin: 0;
 }
 
+.module-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .queue-list,
 .activity-list,
 .role-list,

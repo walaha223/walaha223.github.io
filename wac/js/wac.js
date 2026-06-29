@@ -41,6 +41,7 @@ const state = {
   reports: [],
   payments: [],
   logs: [],
+  logsFiltered: [],
   members: [],
   userModeration: [],
   storeModules: [],
@@ -581,6 +582,48 @@ function exportCsv(filename, rows) {
   URL.revokeObjectURL(url);
 }
 
+function accountingJournalRows() {
+  return billingRows()
+    .filter((payment) => !payment.isDraftBilling)
+    .flatMap((payment) => {
+      const net = billingNet(payment);
+      const base = {
+        ecole: payment.school_name,
+        annee_scolaire: payment.academic_year,
+        reference_comptable: payment.accounting_ref || "",
+        eleves_factures: payment.billed_students,
+        montant_brut_xof: billingGross(payment),
+        reduction_xof: billingDiscount(payment),
+        montant_net_xof: net
+      };
+      const rows = [{
+        ...base,
+        type_ligne: "facturation",
+        document: payment.invoice_number || payment.proforma_number || "",
+        debit_xof: net,
+        credit_xof: "",
+        statut: payment.status,
+        date: payment.issued_at || payment.created_at || "",
+        methode_paiement: "",
+        reference_paiement: ""
+      }];
+      if (payment.status === "paid") {
+        rows.push({
+          ...base,
+          type_ligne: "encaissement",
+          document: payment.invoice_number || payment.proforma_number || "",
+          debit_xof: "",
+          credit_xof: net,
+          statut: "paid",
+          date: payment.confirmed_at || payment.issued_at || payment.created_at || "",
+          methode_paiement: payment.payment_method || "",
+          reference_paiement: payment.payment_reference || ""
+        });
+      }
+      return rows;
+    });
+}
+
 const EXPORTS = {
   users: () => ({
     name: "walaha-utilisateurs.csv",
@@ -612,7 +655,37 @@ const EXPORTS = {
   }),
   logs: () => ({
     name: "walaha-audit.csv",
-    rows: state.logs.map((l) => ({ action: l.action_type, cible_type: l.target_type, cible_id: l.target_id, admin_id: l.admin_id, motif: l.reason, date: l.created_at }))
+    rows: state.logsFiltered.map((l) => ({
+      action: l.action_type,
+      cible_type: l.target_type,
+      cible_id: l.target_id,
+      admin_id: l.admin_id,
+      admin_nom: adminLabel(l.admin_id),
+      motif: l.reason,
+      date: l.created_at
+    }))
+  }),
+  accounting: () => ({
+    name: "walaha-journal-comptable.csv",
+    rows: accountingJournalRows()
+  }),
+  storeCommercial: () => ({
+    name: "walaha-store-commercial.csv",
+    rows: state.storeModules.map((module) => {
+      const stats = moduleCommercialStats(module);
+      return {
+        module: module.name,
+        code: module.code,
+        adoption_pct: stats.adoption,
+        ecoles_actives: stats.active.length,
+        revenu_actif_xof: stats.revenue,
+        en_attente: stats.pending.length,
+        renouvellements: stats.renewals.length,
+        expires: stats.expired.length,
+        prix_negocie: stats.priceRange,
+        prix_moyen_xof: stats.avgPrice ?? ""
+      };
+    })
   }),
   storeRequests: () => ({
     name: "walaha-store-activations.csv",
@@ -1806,6 +1879,7 @@ async function loadData() {
   state.parentLinks = parentLinksResult.data.filter((link) => link.status === "active");
 
   populateLogsAdminFilter();
+  refreshLogsFilter();
 
   // Comptes exacts (totaux réels, non plafonnés à 1000 lignes).
   const [schoolsCount, studentsCount, usersCount, tutorsCount, paymentsCount, reportsPendingCount] = await Promise.all([
@@ -2364,8 +2438,9 @@ function renderPlayPricing() {
   `), 5, "Aucune activité WalahaPlay.");
 }
 
-function renderLogs(list = state.logs) {
-  renderTable("logsTable", list.map((log) => `
+function renderLogs(list) {
+  const rows = list ?? state.logsFiltered;
+  renderTable("logsTable", rows.map((log) => `
     <tr>
       <td><span class="action-chip">${text(log.action_type)}</span></td>
       <td>${text(log.target_type)}<small>${text(log.target_id)}</small></td>
@@ -3511,6 +3586,36 @@ window.addEventListener("hashchange", () => {
   if (!adminShell.classList.contains("is-hidden")) setRoute(route);
 });
 
+function refreshLogsFilter() {
+  const search = document.querySelector('[data-search="logs"]');
+  const targetFilter = document.querySelector('[data-filter="logs"]');
+  const actionFilter = document.querySelector('[data-filter-action="logs"]');
+  const adminFilter = document.querySelector('[data-filter-admin="logs"]');
+  const fromFilter = document.querySelector('[data-filter-from="logs"]');
+  const toFilter = document.querySelector('[data-filter-to="logs"]');
+
+  const q = (search?.value || "").trim().toLowerCase();
+  const targetType = targetFilter?.value || "all";
+  const actionPrefix = actionFilter?.value || "all";
+  const adminId = adminFilter?.value || "all";
+  const from = fromFilter?.value ? new Date(`${fromFilter.value}T00:00:00`) : null;
+  const to = toFilter?.value ? new Date(`${toFilter.value}T23:59:59`) : null;
+
+  const list = state.logs.filter((log) => {
+    const enriched = { ...log, admin_name: adminLabel(log.admin_id) };
+    const matchesText = !q || JSON.stringify(enriched).toLowerCase().includes(q);
+    const matchesTarget = targetType === "all" || log.target_type === targetType;
+    const matchesAction = actionPrefix === "all" || (log.action_type || "").startsWith(actionPrefix);
+    const matchesAdmin = adminId === "all" || log.admin_id === adminId;
+    const created = new Date(log.created_at);
+    const matchesFrom = !from || created >= from;
+    const matchesTo = !to || created <= to;
+    return matchesText && matchesTarget && matchesAction && matchesAdmin && matchesFrom && matchesTo;
+  });
+  state.logsFiltered = list;
+  renderLogs(list);
+}
+
 function applyLogsFilter() {
   const search = document.querySelector('[data-search="logs"]');
   const targetFilter = document.querySelector('[data-filter="logs"]');
@@ -3519,32 +3624,13 @@ function applyLogsFilter() {
   const fromFilter = document.querySelector('[data-filter-from="logs"]');
   const toFilter = document.querySelector('[data-filter-to="logs"]');
 
-  const run = () => {
-    const q = (search?.value || "").trim().toLowerCase();
-    const targetType = targetFilter?.value || "all";
-    const actionPrefix = actionFilter?.value || "all";
-    const adminId = adminFilter?.value || "all";
-    const from = fromFilter?.value ? new Date(`${fromFilter.value}T00:00:00`) : null;
-    const to = toFilter?.value ? new Date(`${toFilter.value}T23:59:59`) : null;
-
-    const list = state.logs.filter((log) => {
-      const enriched = { ...log, admin_name: adminLabel(log.admin_id) };
-      const matchesText = !q || JSON.stringify(enriched).toLowerCase().includes(q);
-      const matchesTarget = targetType === "all" || log.target_type === targetType;
-      const matchesAction = actionPrefix === "all" || (log.action_type || "").startsWith(actionPrefix);
-      const matchesAdmin = adminId === "all" || log.admin_id === adminId;
-      const created = new Date(log.created_at);
-      const matchesFrom = !from || created >= from;
-      const matchesTo = !to || created <= to;
-      return matchesText && matchesTarget && matchesAction && matchesAdmin && matchesFrom && matchesTo;
-    });
-    renderLogs(list);
-  };
+  const run = () => refreshLogsFilter();
 
   [search, targetFilter, actionFilter, adminFilter, fromFilter, toFilter].forEach((el) => {
     el?.addEventListener("input", run);
     el?.addEventListener("change", run);
   });
+  run();
 }
 
 applyFilter("schools", () => schoolsList(), renderSchools);
