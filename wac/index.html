@@ -79,6 +79,7 @@
         <form id="actionModalForm" class="modal-form">
           <p id="actionModalDescription"></p>
           <div id="actionModalDetails" class="detail-list"></div>
+          <div id="actionModalQuickActions" class="quick-actions is-hidden"></div>
           <div id="actionModalFields" class="field-list"></div>
           <div id="actionModalReasonWrap">
             <label for="actionModalReason" id="actionModalReasonLabel">Motif / note interne</label>
@@ -107,7 +108,7 @@
           <a href="#games" data-route="games" data-icon="▶">Jeux educatifs</a>
           <a href="#store" data-route="store" data-icon="✚">WalahaStore</a>
           <a href="#reports" data-route="reports" data-icon="!">Signalements</a>
-          <a href="#payments" data-route="payments" data-icon="₣">Paiements</a>
+          <a href="#payments" data-route="payments" data-icon="₣">Facturation</a>
           <a href="#logs" data-route="logs" data-icon="⌁">Audit logs</a>
           <a href="#settings" data-route="settings" data-icon="⚙">Parametres</a>
         </nav>
@@ -122,46 +123,94 @@
           <button class="menu-button" type="button" id="menuButton" aria-label="Ouvrir le menu">
             <span></span><span></span><span></span>
           </button>
-          <div>
+          <div class="topbar-title-block">
             <p class="eyebrow">Walaha Team only</p>
             <h1 id="pageTitle">Dashboard general</h1>
           </div>
           <div class="top-actions">
+            <div class="global-search">
+              <input type="search" id="globalSearch" placeholder="École, utilisateur, élève, parent, module, paiement…" autocomplete="off" aria-label="Recherche globale WAC">
+              <div class="global-results is-hidden" id="globalResults"></div>
+            </div>
             <span class="live-pill"><span></span>Live Supabase</span>
+            <div class="notif-center">
+              <button type="button" id="notifBellButton" class="notif-bell" aria-label="Notifications internes" aria-expanded="false">
+                <span aria-hidden="true">🔔</span>
+                <span id="notifBellBadge" class="notif-bell-badge is-zero">0</span>
+              </button>
+              <div id="notificationsDropdown" class="notif-dropdown is-hidden" role="region" aria-label="Alertes WAC">
+                <header class="notif-dropdown-head"><strong>Alertes WAC</strong><small>Files prioritaires</small></header>
+                <div id="notificationsList" class="notification-list"></div>
+              </div>
+            </div>
             <span class="role-pill">super_admin</span>
             <button type="button" id="logoutButton">Deconnexion</button>
           </div>
         </header>
 
         <main class="content">
-          <section class="view is-active" id="view-dashboard" data-title="Dashboard general">
-            <div class="metrics-grid">
-              <article class="metric-card"><span>Ecoles actives</span><strong>42</strong><small>+8 en attente</small></article>
-              <article class="metric-card"><span>Eleves inscrits</span><strong>3 850</strong><small>Donnees sensibles</small></article>
-              <article class="metric-card"><span>Parents lies</span><strong>2 100</strong><small>Comptes actifs</small></article>
-              <article class="metric-card"><span>Signalements ouverts</span><strong>7</strong><small>2 haute priorite</small></article>
-              <article class="metric-card"><span>Repetiteurs en attente</span><strong>18</strong><small>Validation requise</small></article>
-              <article class="metric-card"><span>Suivi paiements</span><strong>0</strong><small>Dossiers financiers</small></article>
-            </div>
-            <div class="dashboard-grid">
-              <section class="panel">
-                <div class="panel-head">
-                  <h2>Files de validation</h2>
-                  <button type="button" data-route="schools">Voir ecoles</button>
-                </div>
-                <div class="queue-list" id="validationQueue"></div>
+          <section class="view is-active dashboard-view" id="view-dashboard" data-title="Dashboard">
+            <header class="dash-hero">
+              <div class="dash-hero-main">
+                <p class="dash-eyebrow">Walaha Admin Center</p>
+                <h2 class="dash-title" id="dashGreeting">Tableau de bord</h2>
+                <p class="dash-subtitle" id="opsBriefCopy">Chargement…</p>
+              </div>
+              <div class="dash-hero-meta">
+                <span class="dash-role" id="dashRole">admin</span>
+                <time class="dash-date" id="dashDate"></time>
+                <span class="dash-status" id="dashStatus">—</span>
+              </div>
+            </header>
+
+            <nav class="dash-shortcuts" id="dashShortcuts" aria-label="Raccourcis"></nav>
+
+            <div class="dash-kpi-grid" id="dashMetrics" aria-label="Indicateurs clés"></div>
+
+            <div class="dash-body">
+              <section class="dash-panel dash-panel-tasks">
+                <header class="dash-panel-head">
+                  <div>
+                    <h3>À traiter</h3>
+                    <p>File prioritaire — cliquez pour ouvrir la fiche</p>
+                  </div>
+                  <span class="dash-badge" id="dashTaskBadge">0</span>
+                </header>
+                <div class="dash-task-list" id="dashTaskList"></div>
               </section>
-              <section class="panel">
-                <div class="panel-head">
-                  <h2>Activites recentes</h2>
-                  <button type="button" data-route="logs">Voir logs</button>
-                </div>
-                <div class="activity-list" id="recentActivity"></div>
-              </section>
+
+              <aside class="dash-aside">
+                <section class="dash-panel dash-panel-finance">
+                  <header class="dash-panel-head">
+                    <div>
+                      <h3>Finance & Store</h3>
+                      <p>Encaissements et revenus modules</p>
+                    </div>
+                  </header>
+                  <div class="dash-finance-viz" id="dashFinanceViz"></div>
+                  <div class="dash-finance-list" id="decisionGrid"></div>
+                </section>
+
+                <section class="dash-panel dash-panel-activity">
+                  <header class="dash-panel-head">
+                    <div>
+                      <h3>Activité récente</h3>
+                      <p>Audit log — dernières actions</p>
+                    </div>
+                    <button type="button" class="dash-text-btn" data-route="logs">Tout</button>
+                  </header>
+                  <div class="dash-timeline" id="recentActivity"></div>
+                </section>
+              </aside>
             </div>
+
+            <div id="opsBriefActions" class="is-hidden" aria-hidden="true"></div>
+            <div id="validationQueue" class="is-hidden" aria-hidden="true"></div>
+            <div id="dashAlertPill" class="is-hidden" aria-hidden="true"></div>
+            <span id="dashAlertCount" class="is-hidden" aria-hidden="true"></span>
           </section>
 
-          <section class="view" id="view-schools" data-title="Gestion et validation des ecoles">
+          <section class="view" id="view-schools" data-title="Gestion et validation des ecoles" hidden>
             <div class="module-head">
               <div>
                 <p class="eyebrow">Demandes ECO-</p>
@@ -187,7 +236,7 @@
             </div>
           </section>
 
-          <section class="view" id="view-users" data-title="Gestion des utilisateurs">
+          <section class="view" id="view-users" data-title="Gestion des utilisateurs" hidden>
             <div class="module-head">
               <div>
                 <p class="eyebrow">Comptes</p>
@@ -212,13 +261,42 @@
             </div>
           </section>
 
-          <section class="view" id="view-tutors" data-title="Moderation des repetiteurs">
+          <section class="view" id="view-tutors" data-title="Moderation des repetiteurs" hidden>
             <div class="module-head">
               <div>
                 <p class="eyebrow">Offres cours prives</p>
                 <h2>Repetiteurs</h2>
               </div>
               <button type="button" class="secondary-action" data-route="reports">Voir signalements</button>
+            </div>
+            <div class="module-head store-subhead">
+              <div>
+                <p class="eyebrow">Demandes parent</p>
+                <h2>Devenir repetiteur</h2>
+                <small>Demandes soumises depuis le profil Parent — accepter, refuser ou mettre en attente.</small>
+              </div>
+            </div>
+            <div class="filters">
+              <input type="search" placeholder="Rechercher parent, matiere, email..." data-search="tutorRequests">
+              <select data-filter="tutorRequests">
+                <option value="all">Tous les statuts</option>
+                <option value="pending_review">En attente</option>
+                <option value="on_hold">Mise en attente</option>
+                <option value="approved">Acceptees</option>
+                <option value="rejected">Refusees</option>
+              </select>
+            </div>
+            <div class="table-card table-compact">
+              <table>
+                <thead><tr><th>Parent</th><th>Matières</th><th>Contact</th><th>Date</th><th>Statut</th><th>Action</th></tr></thead>
+                <tbody id="tutorRequestsTable"></tbody>
+              </table>
+            </div>
+            <div class="module-head store-subhead">
+              <div>
+                <p class="eyebrow">Profils actifs</p>
+                <h2>Repetiteurs valides</h2>
+              </div>
             </div>
             <div class="table-card">
               <table>
@@ -228,7 +306,7 @@
             </div>
           </section>
 
-          <section class="view" id="view-games" data-title="Gestion des jeux educatifs">
+          <section class="view" id="view-games" data-title="Gestion des jeux educatifs" hidden>
             <div class="module-head">
               <div>
                 <p class="eyebrow">WalahaPlay</p>
@@ -239,56 +317,157 @@
             <div class="cards-grid" id="gamesGrid"></div>
           </section>
 
-          <section class="view" id="view-store" data-title="WalahaStore — modules et activations">
+          <section class="view" id="view-store" data-title="WalahaStore — modules et activations" hidden>
             <div class="module-head">
               <div>
                 <p class="eyebrow">Boutique modules</p>
                 <h2>Catalogue WalahaStore</h2>
               </div>
-              <button type="button" class="primary-action" data-act="module.create">Créer un module</button>
+              <button type="button" class="secondary-action" data-route="settings">Configurer les prix</button>
             </div>
-            <div class="metrics-grid" id="storeMetrics"></div>
-            <div class="cards-grid" id="storeModulesGrid"></div>
-            <div class="module-head store-subhead">
-              <div>
-                <p class="eyebrow">Activations</p>
-                <h2>Demandes d'activation</h2>
+            <div class="store-tabs" role="tablist" aria-label="WalahaStore">
+              <button type="button" class="is-active" data-store-tab="stats"><strong>Stats</strong><small>Vue d'ensemble</small></button>
+              <button type="button" data-store-tab="activations"><strong>Activations</strong><small>Demandes d'activation</small></button>
+              <button type="button" data-store-tab="catalog"><strong>Boutique modules</strong><small>Catalogue WalahaStore</small></button>
+              <button type="button" data-store-tab="custom"><strong>Sur devis</strong><small>Modules personnalises</small></button>
+            </div>
+            <section class="store-panel is-active" data-store-panel="stats">
+              <div class="module-head store-subhead">
+                <div>
+                  <p class="eyebrow">Stats</p>
+                  <h2>Vue d'ensemble</h2>
+                  <small id="storeStatsSubtitle">Indicateurs calcules avec les donnees WalahaStore chargees.</small>
+                </div>
               </div>
-              <button type="button" class="secondary-action" data-export="storeRequests">Exporter CSV</button>
-            </div>
-            <div class="filters">
-              <input type="search" placeholder="Rechercher module, ecole, statut..." data-search="store">
-              <select data-filter="store">
-                <option value="all">Tous les statuts</option>
-                <option value="requested">Demande</option>
-                <option value="approved">Approuvee</option>
-                <option value="active">Active</option>
-                <option value="rejected">Refusee</option>
-                <option value="suspended">Suspendue</option>
-              </select>
-            </div>
-            <div class="table-card">
-              <table>
-                <thead><tr><th>Module</th><th>Ecole</th><th>Demande par</th><th>Prix</th><th>Statut</th><th>Action</th></tr></thead>
-                <tbody id="storeRequestsTable"></tbody>
-              </table>
-            </div>
-            <div class="module-head store-subhead">
-              <div>
-                <p class="eyebrow">Sur devis</p>
-                <h2>Demandes de modules personnalises</h2>
+              <div class="store-periods" role="tablist" aria-label="Période des statistiques WalahaStore">
+                <button type="button" data-store-period="day">Jour</button>
+                <button type="button" data-store-period="week">Semaine</button>
+                <button type="button" class="is-active" data-store-period="month">Mois</button>
+                <button type="button" data-store-period="quarter">Trimestre</button>
+                <button type="button" data-store-period="semester">Semestre</button>
+                <button type="button" data-store-period="year">Annuel</button>
               </div>
-              <button type="button" class="secondary-action" data-export="storeCustom">Exporter CSV</button>
-            </div>
-            <div class="table-card">
-              <table>
-                <thead><tr><th>Demande</th><th>Ecole</th><th>Demande par</th><th>Statut</th><th>Action</th></tr></thead>
-                <tbody id="storeCustomTable"></tbody>
-              </table>
-            </div>
+              <div class="metrics-grid store-metrics" id="storeMetrics"></div>
+              <div class="module-head store-subhead">
+                <div>
+                  <p class="eyebrow">Commercial</p>
+                  <h2>Performance par module</h2>
+                  <small>Adoption, revenu, écoles clientes, renouvellements et prix négociés.</small>
+                </div>
+              </div>
+              <div class="table-card table-compact">
+                <table>
+                  <thead><tr><th>Module</th><th>Adoption</th><th>Revenu actif</th><th>Écoles</th><th>En attente</th><th>Renouv.</th><th>Expirés</th><th>Prix négocié</th><th></th></tr></thead>
+                  <tbody id="storeCommercialTable"></tbody>
+                </table>
+              </div>
+              <div class="store-analytics">
+                <article class="store-chart-card store-chart-wide">
+                  <div class="chart-head">
+                    <div>
+                      <p class="eyebrow">Tendance</p>
+                      <h3>Activations et demandes</h3>
+                    </div>
+                    <strong id="storeTrendTotal">0</strong>
+                  </div>
+                  <div class="store-bars" id="storeTrendChart"></div>
+                </article>
+                <article class="store-chart-card">
+                  <div class="chart-head">
+                    <div>
+                      <p class="eyebrow">Revenu</p>
+                      <h3>Par module</h3>
+                    </div>
+                  </div>
+                  <div id="storeRevenueChart"></div>
+                </article>
+                <article class="store-chart-card">
+                  <div class="chart-head">
+                    <div>
+                      <p class="eyebrow">Pipeline</p>
+                      <h3>Statuts</h3>
+                    </div>
+                  </div>
+                  <div id="storeStatusChart"></div>
+                </article>
+                <article class="store-chart-card store-chart-wide">
+                  <div class="chart-head">
+                    <div>
+                      <p class="eyebrow">Performance</p>
+                      <h3>Top modules et écoles</h3>
+                    </div>
+                  </div>
+                  <div id="storeTopList"></div>
+                </article>
+              </div>
+              <div class="module-head store-subhead">
+                <div>
+                  <p class="eyebrow">Historique</p>
+                  <h2>Prix et renouvellements</h2>
+                </div>
+                <button type="button" class="secondary-action" data-export="storePriceHistory">Exporter CSV</button>
+              </div>
+              <div class="table-card">
+                <table>
+                  <thead><tr><th>Date</th><th>Module / ecole</th><th>Prix</th><th>Echeance</th></tr></thead>
+                  <tbody id="storePriceHistoryTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="store-panel" data-store-panel="activations">
+              <div class="module-head store-subhead">
+                <div>
+                  <p class="eyebrow">Activations</p>
+                  <h2>Demandes d'activation</h2>
+                </div>
+                <button type="button" class="secondary-action" data-export="storeRequests">Exporter CSV</button>
+              </div>
+              <div class="filters">
+                <input type="search" placeholder="Rechercher module, ecole, statut..." data-search="store">
+                <select data-filter="store">
+                  <option value="all">Tous les statuts</option>
+                  <option value="requested">Demande</option>
+                  <option value="approved">Approuvee</option>
+                  <option value="active">Active</option>
+                  <option value="rejected">Refusee</option>
+                  <option value="suspended">Suspendue</option>
+                </select>
+              </div>
+              <div class="table-card">
+                <table>
+                  <thead><tr><th>Module</th><th>Ecole</th><th>Demande par</th><th>Prix</th><th>Statut</th><th>Action</th></tr></thead>
+                  <tbody id="storeRequestsTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="store-panel" data-store-panel="catalog">
+              <div class="module-head store-subhead">
+                <div>
+                  <p class="eyebrow">Boutique modules</p>
+                  <h2>Catalogue WalahaStore</h2>
+                </div>
+                <button type="button" class="secondary-action" data-route="settings">Configurer les prix</button>
+              </div>
+              <div class="cards-grid store-modules-grid" id="storeModulesGrid"></div>
+            </section>
+            <section class="store-panel" data-store-panel="custom">
+              <div class="module-head store-subhead">
+                <div>
+                  <p class="eyebrow">Sur devis</p>
+                  <h2>Modules personnalises</h2>
+                </div>
+                <button type="button" class="secondary-action" data-export="storeCustom">Exporter CSV</button>
+              </div>
+              <div class="table-card">
+                <table>
+                  <thead><tr><th>Demande</th><th>Ecole</th><th>Statut</th><th>Action</th></tr></thead>
+                  <tbody id="storeCustomTable"></tbody>
+                </table>
+              </div>
+            </section>
           </section>
 
-          <section class="view" id="view-reports" data-title="Gestion des signalements">
+          <section class="view" id="view-reports" data-title="Gestion des signalements" hidden>
             <div class="module-head">
               <div>
                 <p class="eyebrow">Moderation</p>
@@ -304,23 +483,36 @@
             </div>
           </section>
 
-          <section class="view" id="view-payments" data-title="Suivi des paiements">
+          <section class="view" id="view-payments" data-title="Facturation écoles" hidden>
             <div class="module-head">
               <div>
-                <p class="eyebrow">Finance interne</p>
-                <h2>Paiements scolaires numériques</h2>
+                <p class="eyebrow">Finance écoles</p>
+                <h2>Facturation par école</h2>
               </div>
               <button type="button" class="secondary-action" data-export="payments">Exporter CSV</button>
             </div>
+            <div class="metrics-grid" id="billingMetrics"></div>
+            <div class="filters">
+              <input type="search" placeholder="Rechercher école, année, facture, référence..." data-search="payments">
+              <select data-filter="payments">
+                <option value="all">Tous les statuts</option>
+                <option value="to_prepare">À préparer</option>
+                <option value="pending">À facturer</option>
+                <option value="partial">Partiel</option>
+                <option value="overdue">En retard</option>
+                <option value="paid">Payée</option>
+                <option value="cancelled">Annulée</option>
+              </select>
+            </div>
             <div class="table-card">
               <table>
-                <thead><tr><th>Ecole</th><th>Annee</th><th>Eleves factures</th><th>Montant</th><th>Statut</th><th>Action</th></tr></thead>
+                <thead><tr><th>Ecole</th><th>Annee</th><th>Eleves</th><th>Montant</th><th>Documents</th><th>Comptabilite</th><th>Statut</th><th>Action</th></tr></thead>
                 <tbody id="paymentsTable"></tbody>
               </table>
             </div>
           </section>
 
-          <section class="view" id="view-logs" data-title="Journal d'audit">
+          <section class="view" id="view-logs" data-title="Journal d'audit" hidden>
             <div class="module-head">
               <div>
                 <p class="eyebrow">Traçabilite</p>
@@ -328,46 +520,126 @@
               </div>
               <button type="button" class="secondary-action" data-export="logs">Exporter CSV</button>
             </div>
-            <div class="filters">
-              <input type="search" placeholder="Rechercher action, cible, admin, motif..." data-search="logs">
+            <div class="filters filters-logs">
+              <input type="search" placeholder="Rechercher action, cible, admin, motif…" data-search="logs">
+              <select data-filter="logs">
+                <option value="all">Toutes les cibles</option>
+                <option value="school_request">Écoles</option>
+                <option value="tutor_request">Demandes répétiteur</option>
+                <option value="school_digital_payment">Facturation</option>
+                <option value="store_subscription">WalahaStore</option>
+                <option value="store_module">Modules Store</option>
+                <option value="store_custom_request">Devis Store</option>
+                <option value="moderation_report">Signalements</option>
+                <option value="user">Utilisateurs</option>
+                <option value="app_pricing_config">Prix config</option>
+              </select>
+              <select data-filter-action="logs">
+                <option value="all">Toutes les actions</option>
+                <option value="STORE_">WalahaStore</option>
+                <option value="PAYMENT_">Paiements</option>
+                <option value="SCHOOL_">Écoles</option>
+                <option value="REPORT_">Signalements</option>
+                <option value="USER_">Utilisateurs</option>
+                <option value="MODULE_">Modules</option>
+                <option value="STORE_MODULE_">Activation module</option>
+                <option value="PRICING_">Tarification</option>
+                <option value="MEMBER_">Membres WAC</option>
+              </select>
+              <select data-filter-admin="logs" id="logsAdminFilter">
+                <option value="all">Tous les admins</option>
+              </select>
+              <input type="date" data-filter-from="logs" aria-label="Date début audit">
+              <input type="date" data-filter-to="logs" aria-label="Date fin audit">
             </div>
-            <div class="table-card">
+            <div class="table-card table-compact">
               <table>
-                <thead><tr><th>Action</th><th>Cible</th><th>Admin</th><th>Raison</th><th>Date</th></tr></thead>
+                <thead><tr><th>Action</th><th>Cible</th><th>Admin</th><th>Raison</th><th>Date</th><th></th></tr></thead>
                 <tbody id="logsTable"></tbody>
               </table>
             </div>
           </section>
 
-          <section class="view" id="view-settings" data-title="Parametres admin">
-            <div class="module-head">
-              <div>
-                <p class="eyebrow">Walaha Team</p>
-                <h2>Membres internes</h2>
+          <section class="view" id="view-settings" data-title="Parametres admin" hidden>
+            <div class="settings-tabs" role="tablist" aria-label="Paramètres WAC">
+              <button type="button" class="is-active" data-settings-tab="members">Membres internes</button>
+              <button type="button" data-settings-tab="pricing">Configuration des prix</button>
+            </div>
+            <section class="settings-panel is-active" data-settings-panel="members">
+              <div class="module-head">
+                <div>
+                  <p class="eyebrow">Walaha Team</p>
+                  <h2>Membres internes</h2>
+                </div>
+                <button type="button" class="primary-action is-hidden" id="addMemberButton" data-act="member.add">Ajouter un membre</button>
               </div>
-              <button type="button" class="primary-action is-hidden" id="addMemberButton" data-act="member.add">Ajouter un membre</button>
-            </div>
-            <div class="table-card">
-              <table>
-                <thead><tr><th>Membre</th><th>Role</th><th>Statut</th><th>Depuis</th><th>Action</th></tr></thead>
-                <tbody id="membersTable"></tbody>
-              </table>
-            </div>
-            <div class="settings-grid">
-              <article class="panel">
-                <h2>Roles internes</h2>
-                <div class="role-list" id="rolesList"></div>
-              </article>
-              <article class="panel">
-                <h2>Regles critiques</h2>
-                <ul class="policy-list">
-                  <li>Pas d'acces admin sans `admin_members` actif.</li>
-                  <li>Pas de cle Supabase sensible cote frontend.</li>
-                  <li>Validation ecole, paiement et roles via serveur.</li>
-                  <li>Toute action sensible doit creer un audit log.</li>
-                </ul>
-              </article>
-            </div>
+              <div class="table-card">
+                <table>
+                  <thead><tr><th>Membre</th><th>Role</th><th>Statut</th><th>Depuis</th><th>Action</th></tr></thead>
+                  <tbody id="membersTable"></tbody>
+                </table>
+              </div>
+              <div class="settings-grid">
+                <article class="panel">
+                  <h2>Roles internes</h2>
+                  <div class="role-list" id="rolesList"></div>
+                </article>
+                <article class="panel">
+                  <h2>Regles critiques</h2>
+                  <ul class="policy-list">
+                    <li>Pas d'acces admin sans `admin_members` actif.</li>
+                    <li>Pas de cle Supabase sensible cote frontend.</li>
+                    <li>Validation ecole, paiement et roles via serveur.</li>
+                    <li>Toute action sensible doit creer un audit log.</li>
+                  </ul>
+                </article>
+              </div>
+            </section>
+            <section class="settings-panel" data-settings-panel="pricing">
+              <div class="module-head">
+                <div>
+                  <p class="eyebrow">Configuration</p>
+                  <h2>Configuration des prix</h2>
+                </div>
+                <button type="button" class="secondary-action" data-act="pricing.school.edit" data-id="school_subscription_default">Modifier souscription</button>
+              </div>
+              <div class="price-tabs" role="tablist" aria-label="Configuration des prix">
+                <button type="button" class="is-active" data-price-tab="school">Souscription école</button>
+                <button type="button" data-price-tab="store">Modules WalahaStore</button>
+                <button type="button" data-price-tab="play">WalahaPlay</button>
+              </div>
+              <section class="price-panel is-active" data-price-panel="school">
+                <div class="table-card">
+                  <table>
+                    <thead><tr><th>Prix</th><th>Règle</th><th>Statut</th><th>Action</th></tr></thead>
+                    <tbody id="schoolPricingTable"></tbody>
+                  </table>
+                </div>
+              </section>
+              <section class="price-panel" data-price-panel="store">
+                <div class="module-head store-subhead">
+                  <div>
+                    <p class="eyebrow">WalahaStore</p>
+                    <h2>Prix des modules</h2>
+                  </div>
+                  <button type="button" class="primary-action" data-act="module.create">Créer un module</button>
+                </div>
+                <div class="table-card">
+                  <table>
+                    <thead><tr><th>Module</th><th>Catégorie</th><th>Prix</th><th>Statut</th><th>Action</th></tr></thead>
+                    <tbody id="storePricingTable"></tbody>
+                  </table>
+                </div>
+              </section>
+              <section class="price-panel" data-price-panel="play">
+                <div class="table-card">
+                  <table>
+                    <thead><tr><th>Activité</th><th>Type</th><th>Prix</th><th>Publication</th><th>Action</th></tr></thead>
+                    <tbody id="playPricingTable"></tbody>
+                  </table>
+                </div>
+              </section>
+            </section>
           </section>
         </main>
       </div>

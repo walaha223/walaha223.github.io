@@ -26,6 +26,10 @@ Migrations a appliquer dans l'ordre :
 6. `supabase/20250625000100_walaha_store.sql` — WalahaStore : `store_modules` + `store_subscriptions` + RLS + seed 7 modules MVP.
 7. `supabase/20250625000200_store_custom_requests.sql` — WalahaStore : demandes de modules personnalisés (sur devis).
 8. `supabase/20250625000300_homework_module.sql` — 1er module réel « Devoirs » (`school_homework`) + verrou paywall `school_has_active_module()`.
+9. `supabase/20250625000400_homework_submissions.sql` — suivi des devoirs par élève.
+10. `supabase/20250625000500_correspondence_module.sql` — module « Carnet de correspondance ».
+11. `supabase/20250625000600_parent_visibility.sql` — RLS : le parent voit devoirs/suivi/carnet de SON enfant.
+12. `supabase/20250625000700_store_resubmit.sql` — re-demande possible après rejet (index unique partiel).
 
 Edge Functions (a deployer depuis le projet WalahaTracker, meme projet Supabase) :
 
@@ -46,7 +50,7 @@ Actions operationnelles (chacune ecrit dans `admin_audit_logs`) :
 
 Exports CSV (boutons « Exporter CSV ») : utilisateurs, paiements, signalements, audit logs, activations WalahaStore.
 
-WalahaStore (onglet dedie) : bandeau revenus (modules actifs, revenu estime, demandes en attente), catalogue de modules (creer / desactiver / reactiver), file des demandes d'activation (approuver -> activer / refuser / suspendre) et file des demandes sur devis (etudier / devis / clore / rejeter). Chaque action tracee + export CSV. Cote PWE, l'ecole consulte le catalogue, demande l'activation et peut demander un module personnalise.
+WalahaStore (onglet dedie) : bandeau revenus (modules actifs, revenu estime base sur les prix convenus, demandes en attente, a renouveler <=30j), catalogue de modules (creer / **modifier** prix-statut-description / desactiver / reactiver), file des demandes d'activation (approuver avec prix convenu -> activer avec echeance / renouveler / refuser / suspendre) et file des demandes sur devis. Chaque action tracee + export CSV. Le detail d'un module montre le nombre d'ecoles actives. Cote PWE, l'ecole consulte le catalogue, demande l'activation (re-demande possible apres rejet) et peut demander un module personnalise.
 
 La vue Ecoles affiche desormais les demandes (`school_requests`) avec un vrai statut, donc le filtre par statut fonctionne. Les ecoles officielles validees restent comptees dans la metrique « Ecoles officielles » (`canonical_schools`).
 

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="css/pwe.css?v=20260623-33" />
+    <link rel="stylesheet" href="css/pwe.css?v=20260623-37" />
   </head>
   <body>
     <div class="bg-aurora" aria-hidden="true"></div>
@@ -152,6 +152,11 @@
                 <span class="nav-ico"><svg aria-hidden="true"><use href="#i-edit"></use></svg></span>
                 <span class="nav-label">Devoirs</span>
               </a>
+              <a href="#correspondence" class="nav-link" data-route="correspondence">
+                <span class="nav-link-rail" aria-hidden="true"></span>
+                <span class="nav-ico"><svg aria-hidden="true"><use href="#i-mail"></use></svg></span>
+                <span class="nav-label">Carnet</span>
+              </a>
             </div>
 
             <div class="sidebar-group">
@@ -289,6 +294,7 @@
                 <span class="app-header-greeting" id="appHeaderGreeting">Bonjour</span>
                 <strong class="app-header-school-name" id="topbarSchoolName">—</strong>
                 <span class="app-header-role" id="topbarRole">—</span>
+                <span class="app-header-role-hint hidden" id="topbarRoleHint"></span>
               </div>
               <div class="school-switcher" id="schoolSwitcher">
                 <button type="button" class="school-switcher-trigger hidden" id="schoolSwitcherBtn" aria-expanded="false" aria-haspopup="listbox" aria-label="Changer d'école">
@@ -340,6 +346,24 @@
             </header>
 
             <div class="stats-grid dashboard-stats" id="dashboardStats"></div>
+
+            <article class="onboarding-panel hidden" id="onboardingPanel" aria-label="Guide de démarrage">
+              <div class="onboarding-head">
+                <div>
+                  <p class="onboarding-eyebrow">Première connexion</p>
+                  <h3 class="onboarding-title">Configurer votre école</h3>
+                  <p class="onboarding-sub">Profil → classes → élèves → lier les parents <code>PAR-</code></p>
+                </div>
+                <div class="onboarding-head-actions">
+                  <span class="onboarding-count" id="onboardingStepCount">0/4</span>
+                  <button type="button" class="btn ghost-btn btn-sm" id="onboardingDismissBtn">Masquer</button>
+                </div>
+              </div>
+              <div class="onboarding-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="onboarding-progress-fill" id="onboardingProgress"></div>
+              </div>
+              <ol class="onboarding-steps" id="onboardingSteps"></ol>
+            </article>
 
             <div class="dashboard-layout">
               <div class="dashboard-main">
@@ -658,8 +682,9 @@
                   </header>
                   <div class="messages-preview-meta" id="messagesPreviewMeta"></div>
                   <div class="messages-preview-body" id="messagesPreviewBody">—</div>
+                  <div class="messages-thread" id="messagesPreviewThread" aria-label="Réponses"></div>
                   <footer class="messages-preview-actions">
-                    <button type="button" class="btn primary-action" data-action="compose-message">
+                    <button type="button" class="btn primary-action" data-action="reply-message" id="messagesReplyBtn">
                       <span class="btn-ico"><svg aria-hidden="true"><use href="#i-reply"></use></svg></span>
                       Répondre
                     </button>
@@ -703,6 +728,40 @@
             </div>
           </section>
 
+          <!-- Carnet de correspondance (module WalahaStore) -->
+          <section class="view" id="view-correspondence" data-title="Carnet de correspondance">
+            <header class="module-hero module-hero--correspondence">
+              <div class="module-hero-glow" aria-hidden="true"></div>
+              <div class="module-hero-body">
+                <div class="module-hero-copy">
+                  <p class="module-hero-eyebrow">Module WalahaStore</p>
+                  <h2 class="module-hero-title">Carnet de correspondance</h2>
+                  <p class="module-hero-sub">Observations, remarques positives et incidents légers, suivis par élève.</p>
+                </div>
+                <button type="button" class="btn primary-action hidden" id="corrAddBtn">
+                  <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+                  Nouvelle entrée
+                </button>
+              </div>
+            </header>
+
+            <div id="corrLocked" class="store-locked">
+              <div class="store-locked-icon"><svg aria-hidden="true"><use href="#i-mail"></use></svg></div>
+              <h3>Module « Carnet de correspondance » non activé</h3>
+              <p>Ce module premium n'est pas encore activé pour votre école. Demandez son activation dans WalahaStore.</p>
+              <a class="btn primary-action" href="#store">Voir dans WalahaStore</a>
+            </div>
+
+            <div id="corrContent" class="hidden">
+              <div class="table-card">
+                <table>
+                  <thead><tr><th>Élève</th><th>Type</th><th>Matière</th><th>Contenu</th><th>Parent</th><th>Action</th></tr></thead>
+                  <tbody id="corrTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
           <!-- WalahaStore -->
           <section class="view" id="view-store" data-title="WalahaStore">
             <header class="module-hero module-hero--store">
@@ -711,48 +770,70 @@
                 <div class="module-hero-copy">
                   <p class="module-hero-eyebrow">Boutique de modules</p>
                   <h2 class="module-hero-title">WalahaStore</h2>
-                  <p class="module-hero-sub">Activez des modules avancés et premium pour votre école, selon vos besoins réels.</p>
+                  <p class="module-hero-sub">Activez des modules avancés et premium pour votre école — pédagogie, communication, pilotage et services sur mesure.</p>
+                </div>
+                <div class="store-hero-badge" aria-hidden="true">
+                  <svg><use href="#i-plus"></use></svg>
                 </div>
               </div>
             </header>
 
+            <div class="store-stats" id="storeStats" aria-label="Résumé WalahaStore"></div>
+
             <div class="store-layout">
               <div class="store-main">
-                <div class="toolbar">
-                  <div class="search-field">
+                <section class="store-featured hidden" id="storeFeatured" aria-label="Modules recommandés">
+                  <div class="store-section-head">
+                    <h3>Recommandés pour votre école</h3>
+                    <p>Modules à forte valeur pédagogique et administrative</p>
+                  </div>
+                  <div class="store-featured-grid" id="storeFeaturedGrid"></div>
+                </section>
+
+                <div class="store-section-head store-section-head--toolbar">
+                  <div>
+                    <h3>Catalogue complet</h3>
+                    <p id="storeCatalogCount">—</p>
+                  </div>
+                  <div class="search-field store-search">
+                    <svg aria-hidden="true" class="search-ico"><use href="#i-search"></use></svg>
                     <input type="search" placeholder="Rechercher un module…" data-search="store" aria-label="Rechercher un module" />
                   </div>
-                  <select data-filter="store" aria-label="Filtrer par catégorie">
-                    <option value="all">Toutes les catégories</option>
-                    <option value="Pédagogie">Pédagogie</option>
-                    <option value="Communication">Communication</option>
-                    <option value="Administration">Administration</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Pilotage">Pilotage</option>
-                    <option value="Premium">Premium</option>
-                    <option value="Visibilité">Visibilité</option>
-                    <option value="Services scolaires">Services scolaires</option>
-                  </select>
                 </div>
+
+                <div class="store-chips" id="storeCategoryChips" role="tablist" aria-label="Filtrer par catégorie"></div>
+
                 <div class="store-grid" id="storeCatalog"></div>
               </div>
 
               <aside class="store-side">
                 <section class="store-side-card store-side-cta">
+                  <div class="store-side-cta-icon" aria-hidden="true">
+                    <svg><use href="#i-compose"></use></svg>
+                  </div>
                   <h3>Besoin sur mesure ?</h3>
-                  <p>Un module spécifique à votre école ? Demandez une étude personnalisée.</p>
+                  <p>Un module spécifique à votre école ? Demandez une étude personnalisée à la Walaha Team.</p>
                   <button type="button" class="btn primary-action" data-action="store-custom-request">
                     <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
                     Demander un module personnalisé
                   </button>
                 </section>
-                <section class="store-side-card">
-                  <h3>Modules actifs</h3>
+                <section class="store-side-card store-side-card--active">
+                  <h3><svg aria-hidden="true"><use href="#i-shield"></use></svg> Modules actifs</h3>
                   <ul class="store-sub-list" id="storeActive"></ul>
                 </section>
-                <section class="store-side-card">
-                  <h3>Demandes en attente</h3>
+                <section class="store-side-card store-side-card--pending">
+                  <h3><svg aria-hidden="true"><use href="#i-calendar"></use></svg> Demandes en attente</h3>
                   <ul class="store-sub-list" id="storePending"></ul>
+                </section>
+                <section class="store-side-card store-side-info">
+                  <h3>Comment ça marche ?</h3>
+                  <ol class="store-steps">
+                    <li>Choisissez un module dans le catalogue</li>
+                    <li>Demandez l'activation (validation Walaha)</li>
+                    <li>Confirmez le tarif convenu</li>
+                    <li>Le module apparaît dans votre portail</li>
+                  </ol>
                 </section>
               </aside>
             </div>
@@ -1038,6 +1119,62 @@
       </div>
     </div>
 
+    <!-- Modal : Nouvelle entrée carnet de correspondance -->
+    <div class="modal hidden" id="modalAddCorrespondence" role="dialog" aria-modal="true" aria-label="Nouvelle entrée du carnet">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-mail"></use></svg></div>
+            <div>
+              <div class="modal-h">Nouvelle entrée</div>
+              <div class="modal-sub">Observation, remarque positive ou incident lié à un élève.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="addCorrespondenceForm" method="post" action="#">
+          <div class="form-grid">
+            <div class="field">
+              <label>Élève</label>
+              <select name="studentId" id="corrStudentSelect" required>
+                <option value="">Choisir un élève…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Type</label>
+              <select name="entryType">
+                <option value="observation">Observation</option>
+                <option value="positive">Remarque positive</option>
+                <option value="incident">Incident léger</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Matière / sujet</label>
+              <input name="subject" placeholder="Ex. Mathématiques, Discipline" />
+            </div>
+            <div class="field">
+              <label>Période</label>
+              <input name="period" placeholder="Ex. Trimestre 3" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Contenu</label>
+            <textarea name="content" rows="3" required placeholder="Décrivez l'observation, la remarque ou l'incident…"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">
+              <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal : Suivi des élèves d'un devoir -->
     <div class="modal hidden" id="modalHomeworkTrack" role="dialog" aria-modal="true" aria-label="Suivi des élèves">
       <div class="modal-backdrop" data-modal-close></div>
@@ -1064,6 +1201,44 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Modal : Fiche module WalahaStore -->
+    <div class="modal hidden" id="modalStoreDetail" role="dialog" aria-modal="true" aria-label="Détail du module">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel modal-panel--store" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon store-detail-icon" id="storeDetailIcon"><svg aria-hidden="true"><use href="#i-book"></use></svg></div>
+            <div>
+              <div class="modal-h" id="storeDetailName">—</div>
+              <div class="modal-sub"><span id="storeDetailCategory">—</span> · <span id="storeDetailPrice">—</span></div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <div class="modal-body store-detail-body">
+          <p id="storeDetailDesc" class="store-detail-desc">—</p>
+          <div class="store-detail-block">
+            <h4>Objectif</h4>
+            <p id="storeDetailObjective">—</p>
+          </div>
+          <div class="store-detail-block">
+            <h4>Fonctionnalités incluses</h4>
+            <ul class="store-detail-features" id="storeDetailFeatures"></ul>
+          </div>
+          <div class="store-detail-meta" id="storeDetailMeta"></div>
+        </div>
+        <div class="modal-actions store-detail-actions">
+          <button type="button" class="btn secondary-btn" data-modal-close>Fermer</button>
+          <button type="button" class="btn primary-action" id="storeDetailRequestBtn" data-action="store-request-from-detail">
+            <span class="btn-ico"><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+            Demander l'activation
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1212,11 +1387,9 @@
             <div class="field">
               <label>Genre</label>
               <select name="gender">
-                <option value="">—</option>
-                <option value="F">F</option>
-                <option value="M">M</option>
-                <option value="other">Autre</option>
-                <option value="unknown">Inconnu</option>
+                <option value="">— Non renseigné —</option>
+                <option value="M">Garçon (M)</option>
+                <option value="F">Fille (F)</option>
               </select>
             </div>
             <div class="field">
@@ -1397,7 +1570,7 @@
             <div class="modal-icon"><svg aria-hidden="true"><use href="#i-file-text"></use></svg></div>
             <div>
               <div class="modal-h">Ajouter un bulletin</div>
-              <div class="modal-sub">Saisie simplifiée — notes détaillées par matière en phase ultérieure.</div>
+              <div class="modal-sub">Moyenne générale + notes détaillées par matière (visibles par les parents une fois publié).</div>
             </div>
           </div>
           <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
@@ -1434,6 +1607,13 @@
             <div class="field" style="grid-column: 1 / -1;">
               <label>Appréciation</label>
               <textarea name="appreciation" rows="2" placeholder="Travail satisfaisant…"></textarea>
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Notes par matière</label>
+              <div id="reportGradesList" class="report-grades-list"></div>
+              <button type="button" class="btn secondary-btn" id="reportAddGradeBtn" style="margin-top:6px;align-self:flex-start;">
+                + Ajouter une matière
+              </button>
             </div>
           </div>
           <div class="modal-actions">
@@ -1538,6 +1718,36 @@
       </div>
     </div>
 
+    <!-- Modal : Répondre à un message -->
+    <div class="modal hidden" id="modalReplyMessage" role="dialog" aria-modal="true" aria-label="Répondre">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-panel" role="document">
+        <div class="modal-head">
+          <div class="modal-title">
+            <div class="modal-icon"><svg aria-hidden="true"><use href="#i-reply"></use></svg></div>
+            <div>
+              <div class="modal-h">Répondre</div>
+              <div class="modal-sub" id="replyMessageSubtitle">Votre réponse sera visible dans le fil de discussion.</div>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" data-modal-close aria-label="Fermer">
+            <span style="font-weight:900;">×</span>
+          </button>
+        </div>
+        <form class="modal-body" id="replyMessageForm" method="post" action="#">
+          <input type="hidden" name="announcementId" id="replyAnnouncementId" />
+          <div class="field">
+            <label>Votre message</label>
+            <textarea name="body" rows="4" required placeholder="Écrivez votre réponse…"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary-btn" data-modal-close>Annuler</button>
+            <button type="submit" class="btn primary-action">Envoyer la réponse</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal : Modifier classe -->
     <div class="modal hidden" id="modalEditClass" role="dialog" aria-modal="true" aria-label="Modifier la classe">
       <div class="modal-backdrop" data-modal-close></div>
@@ -1621,11 +1831,9 @@
             <div class="field">
               <label>Genre</label>
               <select name="gender">
-                <option value="">—</option>
-                <option value="F">F</option>
-                <option value="M">M</option>
-                <option value="other">Autre</option>
-                <option value="unknown">Inconnu</option>
+                <option value="">— Non renseigné —</option>
+                <option value="M">Garçon (M)</option>
+                <option value="F">Fille (F)</option>
               </select>
             </div>
             <div class="field">
@@ -1706,9 +1914,16 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/mock-data.js?v=20260623-33"></script>
-    <script src="js/supabase-config.js?v=20260623-33"></script>
-    <script src="js/pwe-api.js?v=20260623-33"></script>
-    <script src="js/pwe.js?v=20260623-33"></script>
+    <script src="js/mock-data.js?v=20260623-37"></script>
+    <script src="js/supabase-config.js?v=20260623-37"></script>
+    <script src="js/pwe-utils.js?v=20260623-37"></script>
+    <script src="js/pwe-permissions.js?v=20260623-37"></script>
+    <script src="js/pwe-router.js?v=20260623-37"></script>
+    <script src="js/pwe-onboarding.js?v=20260623-37"></script>
+    <script src="js/pwe-api.js?v=20260623-37"></script>
+    <script src="js/pwe-modals.js?v=20260623-37"></script>
+    <script src="js/pwe-renderers.js?v=20260623-37"></script>
+    <script src="js/pwe-store.js?v=20260623-37"></script>
+    <script src="js/pwe.js?v=20260623-37"></script>
   </body>
 </html>

@@ -350,23 +350,39 @@
         : getDemoSchool();
       const bundle = getDemoSchoolBundle(school.id);
       const dashboard = bundle.dashboard || {};
+      const students = bundle.students || [];
+      const classes = bundle.classes || [];
+      const activeStudents = students.filter((s) => s.status === 'active');
+      const studentsWithParents = activeStudents.filter((s) => (s.parents || 0) > 0);
+      const todos = [];
+      if (!activeStudents.length) {
+        todos.push({ text: 'Inscrire votre premier élève', time: 'Démarrage', route: 'students', action: 'add-student' });
+      }
+      if (!classes.filter((c) => c.status === 'active').length) {
+        todos.push({ text: 'Créer une première classe', time: 'Démarrage', route: 'classes', action: 'add-class' });
+      }
+      if (activeStudents.length && !studentsWithParents.length) {
+        todos.push({ text: 'Lier des parents (code PAR-)', time: 'Démarrage', route: 'students' });
+      }
+      if ((dashboard.reportsPending || 0) > 0) {
+        todos.push({ text: `${dashboard.reportsPending} bulletins à valider`, time: 'Bulletins', route: 'reports' });
+      }
+      if ((dashboard.feesUnpaid || 0) > 0) {
+        todos.push({ text: `${dashboard.feesUnpaid} frais en retard`, time: 'Finances', route: 'fees' });
+      }
       return {
-        studentsCount: school.studentsCount,
-        classesCount: school.classesCount,
+        studentsCount: school.studentsCount ?? activeStudents.length,
+        classesCount: school.classesCount ?? classes.filter((c) => c.status === 'active').length,
         teachersCount: school.teachersCount,
-        reportsPending: dashboard.reportsPending,
-        feesUnpaid: dashboard.feesUnpaid,
-        parentsLinked: school.parentsLinked,
+        reportsPending: dashboard.reportsPending ?? 0,
+        feesUnpaid: dashboard.feesUnpaid ?? 0,
+        parentsLinked: school.parentsLinked ?? studentsWithParents.length,
         activity: bundle.activity || [],
-        todos: [
-          { text: `${dashboard.reportsPending || 0} bulletins à valider`, time: 'Bulletins' },
-          { text: `${dashboard.feesUnpaid || 0} frais en retard`, time: 'Finances' },
-          { text: `${dashboard.recentMessages || 0} messages récents`, time: 'Communication' },
-          { text: `${dashboard.needsOpen || 0} demandes ouvertes`, time: 'Administration' },
-        ],
+        todos,
       };
     }
 
+    const c = requireClient();
     const [
       studentsCount,
       classesCount,
@@ -381,21 +397,97 @@
       countRows('school_fees', schoolId, (q) => q.in('status', ['unpaid', 'partial', 'overdue'])),
     ]);
 
+    let parentsLinked = 0;
+    try {
+      const { count } = await c
+        .from('school_student_parents')
+        .select('canonical_parent_id', { count: 'exact', head: true })
+        .eq('school_id', schoolId);
+      parentsLinked = count || 0;
+    } catch {
+      parentsLinked = 0;
+    }
+
+    const activity = [];
+    const pushActivity = (text, createdAt) => {
+      if (!text) return;
+      const d = createdAt ? new Date(createdAt) : null;
+      const time = d && !Number.isNaN(d.getTime())
+        ? d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+        : "Récent";
+      activity.push({ text, time });
+    };
+
+    try {
+      const { data: announcements } = await c
+        .from('school_announcements')
+        .select('subject, created_at')
+        .eq('school_id', schoolId)
+        .order('created_at', { ascending: false })
+        .limit(2);
+      (announcements || []).forEach((a) => pushActivity(`Message : ${a.subject}`, a.created_at));
+    } catch { /* table absente */ }
+
+    try {
+      const { data: reports } = await c
+        .from('school_reports')
+        .select('term_label, updated_at, status')
+        .eq('school_id', schoolId)
+        .in('status', ['draft', 'ready', 'published'])
+        .order('updated_at', { ascending: false })
+        .limit(2);
+      (reports || []).forEach((r) => {
+        const label = r.term_label || 'Bulletin';
+        pushActivity(`Bulletin ${label} (${r.status})`, r.updated_at);
+      });
+    } catch { /* ignore */ }
+
+    try {
+      const { data: corr } = await c
+        .from('school_correspondence')
+        .select('subject, created_at, entry_type')
+        .eq('school_id', schoolId)
+        .neq('status', 'archived')
+        .order('created_at', { ascending: false })
+        .limit(2);
+      (corr || []).forEach((row) => pushActivity(`Carnet : ${row.subject || row.entry_type}`, row.created_at));
+    } catch { /* module non activé */ }
+
+    if (!activity.length) {
+      if (reportsPending > 0) {
+        activity.push({ text: `${reportsPending} bulletins en cours de traitement`, time: "Aujourd'hui" });
+      }
+      if (feesUnpaid > 0) {
+        activity.push({ text: `${feesUnpaid} lignes de frais à relancer`, time: 'Finances' });
+      }
+    }
+
+    const todos = [];
+    if (classesCount === 0) {
+      todos.push({ text: 'Créer une première classe', time: 'Démarrage', route: 'classes', action: 'add-class' });
+    }
+    if (studentsCount === 0) {
+      todos.push({ text: 'Inscrire votre premier élève', time: 'Démarrage', route: 'students', action: 'add-student' });
+    }
+    if (studentsCount > 0 && parentsLinked === 0) {
+      todos.push({ text: 'Lier des parents (code PAR-)', time: 'Démarrage', route: 'students' });
+    }
+    if (reportsPending > 0) {
+      todos.push({ text: `${reportsPending} bulletins à valider`, time: 'Bulletins', route: 'reports' });
+    }
+    if (feesUnpaid > 0) {
+      todos.push({ text: `${feesUnpaid} frais en retard`, time: 'Finances', route: 'fees' });
+    }
+
     return {
       studentsCount,
       classesCount,
       teachersCount: staffCount,
       reportsPending,
       feesUnpaid,
-      parentsLinked: 0,
-      activity: [
-        { text: `${reportsPending} bulletins en cours`, time: "Aujourd'hui" },
-        { text: `${feesUnpaid} frais à relancer`, time: 'Finances' },
-      ],
-      todos: [
-        { text: `${reportsPending} bulletins à valider`, time: 'Bulletins' },
-        { text: `${feesUnpaid} frais en retard`, time: 'Finances' },
-      ],
+      parentsLinked,
+      activity: activity.slice(0, 5),
+      todos,
     };
   }
 
@@ -544,7 +636,8 @@
       name: `${s.first_name} ${s.last_name || ''}`.trim(),
       class: s.school_classes?.name || '—',
       code: s.student_code || '—',
-      gender: s.gender || '—',
+      gender: s.gender || '',
+      genderDisplay: window.PweUtils?.genderLabel(s.gender) || '—',
       status: s.status,
       parents: parentCounts[s.id] || 0,
     }));
@@ -933,10 +1026,27 @@
     }));
   }
 
-  async function createReport({ studentId, period, academicYear, average, appreciation, status }) {
+  async function createReport({ studentId, period, academicYear, average, appreciation, status, grades }) {
     if (mode === 'demo') {
       return { ok: false, error: 'Démo locale : pas d’écriture en base.' };
     }
+
+    const cleanGrades = Array.isArray(grades)
+      ? grades
+          .map((g) => ({
+            subject: String(g.subject || '').trim(),
+            grade:
+              g.grade != null && String(g.grade).trim() !== ''
+                ? Number(String(g.grade).replace(',', '.'))
+                : null,
+            coefficient:
+              g.coefficient != null && String(g.coefficient).trim() !== ''
+                ? Number(String(g.coefficient).replace(',', '.'))
+                : 1,
+            appreciation: String(g.appreciation || '').trim() || null,
+          }))
+          .filter((g) => g.subject !== '')
+      : [];
 
     const c = requireClient();
     const { data, error } = await c.rpc('pwe_create_report', {
@@ -946,6 +1056,7 @@
       p_average: average != null && average !== '' ? Number(average) : null,
       p_appreciation: appreciation || null,
       p_status: status || 'draft',
+      p_grades: cleanGrades.length > 0 ? cleanGrades : null,
     });
 
     if (error) return { ok: false, error: error.message || 'Création bulletin impossible.' };
@@ -1077,6 +1188,61 @@
     return { ok: true, data };
   }
 
+  async function fetchAnnouncementReplies(announcementId) {
+    if (!announcementId) return [];
+    if (mode === 'demo') {
+      const key = `pwe_demo_replies_${announcementId}`;
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    const c = requireClient();
+    const { data, error } = await c.rpc('pwe_list_announcement_replies', {
+      p_announcement_id: announcementId,
+    });
+    if (error) throw error;
+    return (data || []).map((r) => ({
+      id: r.id,
+      authorKind: r.author_kind || 'school',
+      authorName: r.author_name || (r.author_kind === 'parent' ? 'Parent' : 'École'),
+      body: r.body,
+      date: r.created_at
+        ? new Date(r.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+        : '—',
+    }));
+  }
+
+  async function createAnnouncementReply({ announcementId, body }) {
+    if (!announcementId) return { ok: false, error: 'Annonce invalide.' };
+    if (mode === 'demo') {
+      const key = `pwe_demo_replies_${announcementId}`;
+      const list = await fetchAnnouncementReplies(announcementId);
+      const reply = {
+        id: `demo-reply-${Date.now()}`,
+        authorKind: 'school',
+        authorName: 'École (démo)',
+        body: String(body || '').trim(),
+        date: new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }),
+      };
+      list.push(reply);
+      localStorage.setItem(key, JSON.stringify(list));
+      return { ok: true, data: reply };
+    }
+
+    const c = requireClient();
+    const { data, error } = await c.rpc('pwe_create_announcement_reply', {
+      p_announcement_id: announcementId,
+      p_body: String(body || '').trim(),
+    });
+    if (error) return { ok: false, error: error.message || 'Réponse impossible.' };
+    if (data && data.ok === false) return { ok: false, error: data.error || 'Réponse impossible.' };
+    return { ok: true, data };
+  }
+
   async function fetchStudentsForSelect(schoolId) {
     if (mode === 'demo') {
       return (getDemoSchoolBundle(schoolId).students || []).map((s) => ({
@@ -1163,14 +1329,180 @@
   }
 
   const DEMO_STORE_MODULES = [
-    { id: 'mod-homework', code: 'homework', name: 'Devoirs et exercices numériques', category: 'Pédagogie', description: 'Devoirs et exercices liés aux classes de l’école, avec suivi des rendus.', pricing_type: 'annual', price_amount: 50000, status: 'available' },
-    { id: 'mod-exam', code: 'exam_prep', name: 'Préparation DEF / Baccalauréat', category: 'Pédagogie', description: 'Espace de préparation aux examens propre à l’école.', pricing_type: 'per_student', price_amount: 1000, status: 'available' },
-    { id: 'mod-corr', code: 'correspondence', name: 'Carnet de correspondance enrichi', category: 'Communication', description: 'Suivi structuré des remarques, observations et accusés de lecture parents.', pricing_type: 'annual', price_amount: 30000, status: 'available' },
-    { id: 'mod-rdv', code: 'parent_meetings', name: 'Rendez-vous parents-professeurs', category: 'Communication', description: 'Créneaux, demandes, validations et rappels de rencontres.', pricing_type: 'annual', price_amount: 25000, status: 'available' },
-    { id: 'mod-disc', code: 'discipline', name: 'Suivi disciplinaire et comportement', category: 'Administration', description: 'Observations, avertissements, sanctions et progrès par période.', pricing_type: 'annual', price_amount: 30000, status: 'available' },
-    { id: 'mod-portal', code: 'school_portal_custom', name: 'Portail Web École personnalisé', category: 'Premium', description: 'Mini-site professionnel : page publique, branding, contact, préinscription.', pricing_type: 'annual', price_amount: 75000, status: 'beta' },
-    { id: 'mod-analytics', code: 'advanced_analytics', name: 'Statistiques avancées et analytics', category: 'Pilotage', description: 'Analyses détaillées : résultats, présences, paiements, engagement, exports.', pricing_type: 'annual', price_amount: 40000, status: 'available' },
+    {
+      id: 'mod-homework',
+      code: 'homework',
+      name: 'Devoirs et exercices numériques',
+      category: 'Pédagogie',
+      description: 'Devoirs et exercices liés aux classes de l’école, avec suivi des rendus par élève.',
+      objective: 'Centraliser les devoirs, réduire le papier et suivre les rendus en temps réel.',
+      features: ['Création par classe et matière', 'Suivi rendu / non rendu', 'Consignes et échéances', 'Archivage par trimestre'],
+      pricing_type: 'annual',
+      price_amount: 50000,
+      status: 'available',
+      icon: 'i-book',
+      featured: true,
+    },
+    {
+      id: 'mod-corr',
+      code: 'correspondence',
+      name: 'Carnet de correspondance enrichi',
+      category: 'Communication',
+      description: 'Suivi structuré des remarques, observations et accusés de lecture parents.',
+      objective: 'Remplacer le cahier papier par un carnet numérique traçable.',
+      features: ['Observations et incidents', 'Accusés de lecture parents', 'Historique par élève', 'Export PDF'],
+      pricing_type: 'annual',
+      price_amount: 30000,
+      status: 'available',
+      icon: 'i-mail',
+      featured: true,
+    },
+    {
+      id: 'mod-exam',
+      code: 'exam_prep',
+      name: 'Préparation DEF / Baccalauréat',
+      category: 'Pédagogie',
+      description: 'Espace de préparation aux examens propre à l’école (programmes, sujets, suivi).',
+      objective: 'Aller au-delà de WalahaPlay avec un parcours d’examen personnalisé.',
+      features: ['Banque de sujets école', 'Planning de révision', 'Suivi par élève', 'Statistiques de progression'],
+      pricing_type: 'per_student',
+      price_amount: 1000,
+      status: 'available',
+      icon: 'i-file-text',
+      featured: true,
+    },
+    {
+      id: 'mod-rdv',
+      code: 'parent_meetings',
+      name: 'Rendez-vous parents-professeurs',
+      category: 'Communication',
+      description: 'Créneaux, demandes, validations et rappels de rencontres.',
+      objective: 'Organiser les rencontres sans appels répétitifs ni cahiers papier.',
+      features: ['Créneaux par enseignant', 'Réservation en ligne', 'Rappels automatiques', 'Compte-rendu de séance'],
+      pricing_type: 'annual',
+      price_amount: 25000,
+      status: 'available',
+      icon: 'i-calendar',
+    },
+    {
+      id: 'mod-disc',
+      code: 'discipline',
+      name: 'Suivi disciplinaire et comportement',
+      category: 'Administration',
+      description: 'Observations, avertissements, sanctions et progrès par période.',
+      objective: 'Structurer le suivi comportemental avec traçabilité.',
+      features: ['Incidents et sanctions', 'Progrès et encouragements', 'Vue par classe', 'Rapport trimestriel'],
+      pricing_type: 'annual',
+      price_amount: 30000,
+      status: 'available',
+      icon: 'i-shield',
+    },
+    {
+      id: 'mod-analytics',
+      code: 'advanced_analytics',
+      name: 'Statistiques avancées et analytics',
+      category: 'Pilotage',
+      description: 'Analyses détaillées : résultats, présences, paiements, engagement, exports.',
+      objective: 'Piloter l’école avec des indicateurs au-delà du tableau de bord standard.',
+      features: ['Tableaux de bord avancés', 'Comparaisons par période', 'Exports CSV / PDF', 'Indicateurs personnalisés'],
+      pricing_type: 'annual',
+      price_amount: 40000,
+      status: 'available',
+      icon: 'i-chart',
+    },
+    {
+      id: 'mod-portal',
+      code: 'school_portal_custom',
+      name: 'Portail Web École personnalisé',
+      category: 'Visibilité',
+      description: 'Mini-site professionnel : page publique, branding, contact, préinscription.',
+      objective: 'Renforcer la crédibilité et la visibilité en ligne de l’établissement.',
+      features: ['Page publique école', 'Branding (logo, couleurs)', 'Formulaire préinscription', 'Domaine personnalisé (option)'],
+      pricing_type: 'annual',
+      price_amount: 75000,
+      status: 'beta',
+      icon: 'i-building',
+    },
+    {
+      id: 'mod-enroll',
+      code: 'online_enrollment',
+      name: 'Préinscription et inscription en ligne',
+      category: 'Administration',
+      description: 'Formulaires, dossiers numériques et suivi des candidatures.',
+      objective: 'Faciliter les inscriptions pendant les périodes d’affluence.',
+      features: ['Formulaire en ligne', 'Dépôt de pièces', 'Suivi des dossiers', 'Notifications parents'],
+      pricing_type: 'annual',
+      price_amount: 35000,
+      status: 'coming_soon',
+      icon: 'i-user-plus',
+    },
+    {
+      id: 'mod-competences',
+      code: 'skills_tracking',
+      name: 'Suivi des compétences par matière',
+      category: 'Pédagogie',
+      description: 'Compétences acquises, en progrès ou à renforcer — au-delà des notes.',
+      objective: 'Visualiser la progression pédagogique par compétence.',
+      features: ['Référentiel par matière', 'Niveaux de maîtrise', 'Vue parent simplifiée', 'Bilan par trimestre'],
+      pricing_type: 'annual',
+      price_amount: 45000,
+      status: 'coming_soon',
+      icon: 'i-grid',
+    },
+    {
+      id: 'mod-cantine',
+      code: 'canteen',
+      name: 'Cantine scolaire',
+      category: 'Services scolaires',
+      description: 'Gestion des repas, présences, paiements et incidents cantine.',
+      objective: 'Digitaliser la cantine pour les écoles organisées.',
+      features: ['Menus hebdomadaires', 'Présences repas', 'Paiements intégrés', 'Allergies et régimes'],
+      pricing_type: 'quote',
+      price_amount: null,
+      status: 'quote',
+      icon: 'i-receipt',
+    },
+    {
+      id: 'mod-support',
+      code: 'priority_support',
+      name: 'Formation et support prioritaire',
+      category: 'Premium',
+      description: 'Accompagnement direct, formation du personnel et support prioritaire Walaha.',
+      objective: 'Accélérer l’adoption numérique avec un interlocuteur dédié.',
+      features: ['Sessions de formation', 'Support prioritaire', 'Accompagnement à la configuration', 'Rapport trimestriel'],
+      pricing_type: 'annual',
+      price_amount: 120000,
+      status: 'premium_reserved',
+      icon: 'i-user-check',
+    },
   ];
+
+  const DEMO_STORE_SUBS_KEY = 'pwe_demo_store_subs';
+
+  function defaultDemoStoreSubs(schoolId) {
+    const base = [
+      { id: 'sub-hw', module_id: 'mod-homework', status: 'active', created_at: '2026-01-15T10:00:00Z' },
+      { id: 'sub-corr', module_id: 'mod-corr', status: 'active', created_at: '2026-02-01T11:00:00Z' },
+    ];
+    if (schoolId === 'sch-etoiles') {
+      return [{ id: 'sub-analytics', module_id: 'mod-analytics', status: 'approved', created_at: '2026-06-18T09:00:00Z' }];
+    }
+    return base;
+  }
+
+  function getDemoStoreSubs(schoolId) {
+    try {
+      const all = JSON.parse(localStorage.getItem(DEMO_STORE_SUBS_KEY) || '{}');
+      if (all[schoolId]) return all[schoolId];
+    } catch (_) { /* ignore */ }
+    return defaultDemoStoreSubs(schoolId);
+  }
+
+  function saveDemoStoreSubs(schoolId, subs) {
+    const all = JSON.parse(localStorage.getItem(DEMO_STORE_SUBS_KEY) || '{}');
+    all[schoolId] = subs;
+    localStorage.setItem(DEMO_STORE_SUBS_KEY, JSON.stringify(all));
+  }
 
   async function fetchStoreModules() {
     if (mode === 'demo') return DEMO_STORE_MODULES.map((m) => ({ ...m }));
@@ -1181,11 +1513,29 @@
       .select('id, code, name, category, description, objective, pricing_type, price_amount, status, requires_validation, sort_order')
       .order('sort_order', { ascending: true });
     if (error) throw error;
-    return data || [];
+    return (data || []).map((m) => ({
+      ...m,
+      icon: storeIconForCategory(m.category),
+      features: m.objective ? [m.objective] : [],
+    }));
+  }
+
+  function storeIconForCategory(category) {
+    const map = {
+      Pédagogie: 'i-book',
+      Communication: 'i-mail',
+      Administration: 'i-shield',
+      Pilotage: 'i-chart',
+      Visibilité: 'i-building',
+      Premium: 'i-user-check',
+      'Services scolaires': 'i-receipt',
+      Finance: 'i-credit-card',
+    };
+    return map[category] || 'i-grid';
   }
 
   async function fetchStoreSubscriptions(schoolId) {
-    if (mode === 'demo') return [];
+    if (mode === 'demo') return getDemoStoreSubs(schoolId).map((s) => ({ ...s }));
 
     const c = requireClient();
     const { data, error } = await c
@@ -1199,7 +1549,23 @@
 
   async function requestModuleActivation({ moduleId, schoolId, note }) {
     if (mode === 'demo') {
-      return { ok: false, error: 'Démo locale : la demande d’activation nécessite Supabase.' };
+      if (!moduleId || !schoolId) return { ok: false, error: 'Module ou école invalide.' };
+      const subs = getDemoStoreSubs(schoolId);
+      if (subs.some((s) => s.module_id === moduleId && ['requested', 'approved', 'active'].includes(s.status))) {
+        return { ok: false, error: 'Vous avez déjà une demande ou un abonnement pour ce module.' };
+      }
+      const next = [
+        {
+          id: `sub-demo-${Date.now()}`,
+          module_id: moduleId,
+          status: 'requested',
+          note: note ? String(note).trim() || null : null,
+          created_at: new Date().toISOString(),
+        },
+        ...subs,
+      ];
+      saveDemoStoreSubs(schoolId, next);
+      return { ok: true, id: next[0].id };
     }
     if (!moduleId || !schoolId) return { ok: false, error: 'Module ou école invalide.' };
 
@@ -1252,7 +1618,13 @@
   }
 
   async function isModuleActive(schoolId, code) {
-    if (mode === 'demo') return true;
+    if (mode === 'demo') {
+      if (!schoolId || !code) return false;
+      const mod = DEMO_STORE_MODULES.find((m) => m.code === code);
+      if (!mod) return false;
+      const subs = getDemoStoreSubs(schoolId);
+      return subs.some((s) => s.module_id === mod.id && s.status === 'active');
+    }
     if (!schoolId || !code) return false;
     const c = requireClient();
     const { data: mod } = await c
@@ -1332,11 +1704,13 @@
     return { ok: true, id: data?.id };
   }
 
-  async function archiveHomework(id) {
+  async function archiveHomework(id, schoolId) {
     if (mode === 'demo') return { ok: false, error: 'Démo locale : pas d’écriture en base.' };
     if (!id) return { ok: false, error: 'Devoir invalide.' };
     const c = requireClient();
-    const { error } = await c.from('school_homework').update({ status: 'archived' }).eq('id', id);
+    let q = c.from('school_homework').update({ status: 'archived' }).eq('id', id);
+    if (schoolId) q = q.eq('school_id', schoolId);
+    const { error } = await q;
     if (error) return { ok: false, error: error.message || 'Archivage impossible.' };
     return { ok: true };
   }
@@ -1384,6 +1758,83 @@
     return { ok: true };
   }
 
+  const DEMO_CORRESPONDENCE = [
+    { id: 'co-1', type: 'positive', subject: 'Mathématiques', content: 'Très bonne participation cette semaine, efforts remarqués.', period: 'Trimestre 3', status: 'active', student: 'Awa Diallo', date: '24/06/2026', parentAck: true },
+    { id: 'co-2', type: 'incident', subject: 'Discipline', content: 'Bavardages répétés en classe le matin.', period: 'Trimestre 3', status: 'active', student: 'Moussa Traoré', date: '23/06/2026', parentAck: false },
+  ];
+
+  async function fetchCorrespondence(schoolId) {
+    if (mode === 'demo') return DEMO_CORRESPONDENCE.map((x) => ({ ...x }));
+
+    const c = requireClient();
+    const { data, error } = await c
+      .from('school_correspondence')
+      .select('id, entry_type, subject, content, period, status, created_at, parent_ack_at, student_id, school_students(first_name, last_name)')
+      .eq('school_id', schoolId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    return (data || []).map((r) => ({
+      id: r.id,
+      type: r.entry_type,
+      subject: r.subject || '—',
+      content: r.content || '',
+      period: r.period || '',
+      status: r.status,
+      studentId: r.student_id,
+      student: r.school_students
+        ? `${r.school_students.first_name} ${r.school_students.last_name || ''}`.trim()
+        : '—',
+      date: r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '—',
+      parentAck: Boolean(r.parent_ack_at),
+    }));
+  }
+
+  async function createCorrespondence({ schoolId, studentId, entryType, subject, content, period }) {
+    if (mode === 'demo') {
+      return { ok: false, error: 'Démo locale : pas d’écriture en base.' };
+    }
+    const cleanContent = String(content || '').trim();
+    if (!studentId) return { ok: false, error: 'Sélectionnez un élève.' };
+    if (!cleanContent) return { ok: false, error: 'Le contenu est requis.' };
+
+    const c = requireClient();
+    const { data: auth } = await c.auth.getUser();
+    const { data, error } = await c
+      .from('school_correspondence')
+      .insert({
+        school_id: schoolId,
+        student_id: studentId,
+        entry_type: entryType || 'observation',
+        subject: String(subject || '').trim() || null,
+        content: cleanContent,
+        period: String(period || '').trim() || null,
+        status: 'active',
+        created_by: auth?.user?.id || null,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      if ((error.message || '').toLowerCase().includes('row-level security')) {
+        return { ok: false, error: 'Module Carnet non activé pour votre école (WalahaStore).' };
+      }
+      return { ok: false, error: error.message || 'Création impossible.' };
+    }
+    return { ok: true, id: data?.id };
+  }
+
+  async function archiveCorrespondence(id, schoolId) {
+    if (mode === 'demo') return { ok: false, error: 'Démo locale : pas d’écriture en base.' };
+    if (!id) return { ok: false, error: 'Entrée invalide.' };
+    const c = requireClient();
+    let q = c.from('school_correspondence').update({ status: 'archived' }).eq('id', id);
+    if (schoolId) q = q.eq('school_id', schoolId);
+    const { error } = await q;
+    if (error) return { ok: false, error: error.message || 'Archivage impossible.' };
+    return { ok: true };
+  }
+
   window.PweApi = {
     init,
     fetchStoreModules,
@@ -1396,6 +1847,9 @@
     archiveHomework,
     fetchHomeworkSubmissions,
     saveHomeworkSubmissions,
+    fetchCorrespondence,
+    createCorrespondence,
+    archiveCorrespondence,
     getMode,
     isDemo,
     isDemoMode,
@@ -1429,6 +1883,8 @@
     fetchUnpaidFees,
     recordFeePayment,
     createAnnouncement,
+    fetchAnnouncementReplies,
+    createAnnouncementReply,
     fetchStudentsForSelect,
     updateClass,
     archiveClass,

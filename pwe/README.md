@@ -30,6 +30,8 @@ Le portail utilise **Supabase** pour toutes les données et l’authentification
 
 ```bash
 cd WalahaTracker && ./scripts/push_supabase_migrations.sh
+# WalahaStore, Devoirs, Carnet (extensions WAC) :
+./scripts/push_supabase_wac_extensions.sh
 ```
 
 4. Créer un compte Supabase Auth, puis lier l’école :
@@ -119,16 +121,35 @@ Après migration `20250623000014_pwe_phase_c.sql` :
 
 Actions par ligne dans les tableaux Classes et Élèves (icônes modifier / archiver).
 
-Cache : `?v=20260623-12`.
+Cache : `?v=20260623-36`.
+
+## Guide première connexion
+
+Bandeau sur le tableau de bord (`js/pwe-onboarding.js`) : profil → classes → élèves → parents `PAR-`. Masquable par école (`localStorage`).
+
+## Permissions par rôle
+
+Matrice alignée sur la spec §8 (`js/pwe-permissions.js`) : navigation filtrée, boutons d'action masqués, message contextuel dans l'en-tête (enseignant, comptable, secrétaire…). Tests : `node pwe/tests/pwe-permissions.test.mjs`.
+
+## Messagerie (réponses)
+
+Les annonces parents supportent un **fil de réponses** (école ↔ parents). Migration : `20250627000002_pwe_announcement_replies.sql`. RPC : `pwe_list_announcement_replies`, `pwe_create_announcement_reply`.
 
 ## WalahaStore (page `#store`)
 
-Catalogue des modules premium activables par l'école (lecture de `store_modules`), avec recherche et filtre par catégorie. Bouton **Demander l'activation** → crée une ligne `store_subscriptions` (statut `requested`) qui arrive dans la file du WAC. La barre latérale liste les **modules actifs** et les **demandes en attente** de l'école.
+Catalogue des modules premium activables par l'école (lecture de `store_modules`), avec :
+
+- **Bandeau statistiques** : catalogue, actifs, en attente, disponibles
+- **Modules recommandés** (mise en avant)
+- **Filtres par catégorie** (chips) + recherche texte
+- **Fiches module** (modal détail : objectif, fonctionnalités, tarif)
+- **Demande d'activation** → `store_subscriptions` (statut `requested`) → file WAC
+- Barre latérale : modules actifs, demandes en attente, guide en 4 étapes
 
 - Demande réservée aux `school_owner` / `school_director` (RLS).
 - L'approbation puis l'activation se font côté Walaha Team (WAC).
 - Migration requise (même projet) : `walaha.net/wac/supabase/20250625000100_walaha_store.sql`.
-- En démo (`?demo=1`), le catalogue s'affiche mais la demande est désactivée (lecture seule).
+- En démo (`?demo=1`), le catalogue est interactif : demandes simulées en `localStorage`, paywall réaliste (Devoirs actif sur Faso Kanu par défaut).
 
 ## Module « Devoirs » (page `#homework`)
 
@@ -146,7 +167,13 @@ pwe/
   css/pwe.css             # Styles portail école
   js/mock-data.js         # Données démo (?demo=1)
   js/supabase-config.js   # Clés Supabase (gitignored en local)
+  js/pwe-utils.js         # Utilitaires partagés (genre M/F, DOM…)
+  js/pwe-permissions.js   # Matrice rôles / routes
+  js/pwe-router.js         # Routes et garde d'accès
+  js/pwe-onboarding.js     # Guide première connexion
+  js/pwe-store.js           # WalahaStore (catalogue, abonnements)
   js/pwe-api.js           # Couche données Supabase / démo
-  js/pwe.js               # Auth, routing, rendu
+  js/pwe.js               # Auth, routing, rendu principal
+  tests/pwe-permissions.test.mjs
   README.md
 ```

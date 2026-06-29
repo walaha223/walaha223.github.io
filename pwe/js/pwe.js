@@ -6,14 +6,33 @@
   const SIDEBAR_KEY = 'pwe_sidebar';
   const PROFILE_MODE_KEY = 'pwe_profile_mode';
   const ACTIVE_SCHOOL_KEY = 'pwe_active_school_id';
-  const BUILD = '20260623-33';
+  const BUILD = '20260623-37';
 
-  const PARENT_RELATIONSHIP_LABELS = {
-    mother: 'Mère',
-    father: 'Père',
-    guardian: 'Tuteur / Responsable',
-    other: 'Autre',
-  };
+  const {
+    escapeHtml, normalize, badge, formatGender, genderLabel, $, $$,
+  } = window.PweUtils;
+  const {
+    ROLE_LABELS, canViewRoute, canWriteRoute, canPerform, filterNavSections, roleHint,
+  } = window.PwePermissions;
+  const {
+    ROUTES, ROUTE_SECTIONS, getCurrentRoute, resolveRoute,
+  } = window.PweRouter;
+
+  const openModal = (id) => window.PweModals.openModal(id);
+  const closeModals = () => window.PweModals.closeModals();
+  const fillStudentClassesSelect = (s) => window.PweModals.fillStudentClassesSelect(s);
+  const fillStudentSelect = (id, s) => window.PweModals.fillStudentSelect(id, s);
+  const fillEditProfileForm = (s) => window.PweModals.fillEditProfileForm(s);
+  const fillFeeModalSelects = (s) => window.PweModals.fillFeeModalSelects(s);
+  const fillEditStudentClassesSelect = (s, c) => window.PweModals.fillEditStudentClassesSelect(s, c);
+  const fillEditClassForm = (c) => window.PweModals.fillEditClassForm(c);
+  const fillEditStudentForm = (s, st) => window.PweModals.fillEditStudentForm(s, st);
+  const renderStudentParentLinks = (id) => window.PweModals.renderStudentParentLinks(id);
+  const openLinkStudentParentModal = (st) => window.PweModals.openLinkStudentParentModal(st);
+  const getRenderers = () => window.PweRenderers.RENDERERS;
+  const dashboardGreeting = () => window.PweRenderers.dashboardGreeting();
+
+
 
   let schoolSwitcherOpen = false;
 
@@ -35,6 +54,7 @@
           { route: 'teachers', label: 'Personnel', icon: 'i-user-check' },
           { route: 'reports', label: 'Bulletins', icon: 'i-file-text' },
           { route: 'homework', label: 'Devoirs', icon: 'i-edit' },
+          { route: 'correspondence', label: 'Carnet', icon: 'i-mail' },
         ],
       },
       {
@@ -74,45 +94,10 @@
   };
 
   let schoolDrawerOpen = false;
-  let storeRequestModuleId = null;
-  const storeCache = { modules: null, subs: null };
   let homeworkCache = null;
   let trackHomeworkId = null;
+  let correspondenceCache = null;
 
-  const DASH_STAT_META = {
-    students: { icon: 'i-users', tone: 'teal', route: 'students' },
-    classes: { icon: 'i-grid', tone: 'amber', route: 'classes' },
-    staff: { icon: 'i-user-check', tone: 'slate', route: 'teachers' },
-    reports: { icon: 'i-file-text', tone: 'ocre', route: 'reports' },
-    fees: { icon: 'i-credit-card', tone: 'rose', route: 'fees' },
-    parents: { icon: 'i-mail', tone: 'teal', route: 'messages' },
-  };
-
-  function dashboardGreeting() {
-    const h = new Date().getHours();
-    if (h < 12) return 'Bonjour';
-    if (h < 18) return 'Bon après-midi';
-    return 'Bonsoir';
-  }
-
-  function inferTodoRoute(text) {
-    const t = String(text || '').toLowerCase();
-    if (t.includes('bulletin')) return 'reports';
-    if (t.includes('frais') || t.includes('paiement')) return 'fees';
-    if (t.includes('message') || t.includes('parent')) return 'messages';
-    if (t.includes('classe')) return 'classes';
-    if (t.includes('élève') || t.includes('eleve')) return 'students';
-    return 'dashboard';
-  }
-
-  function inferFeedIcon(text) {
-    const t = String(text || '').toLowerCase();
-    if (t.includes('bulletin')) return 'i-file-text';
-    if (t.includes('frais') || t.includes('finance')) return 'i-credit-card';
-    if (t.includes('message')) return 'i-mail';
-    if (t.includes('classe')) return 'i-grid';
-    return 'i-chart';
-  }
   let lastActionAt = 0;
 
   function updateLoginUi(mode) {
@@ -135,7 +120,63 @@
     }
   }
 
-  function requireWritableMode() {
+  function ensureSchoolCache(schoolId) {
+    if (listCacheSchoolId !== schoolId) {
+      listCache = {};
+      listCacheSchoolId = schoolId;
+      schoolProfile = null;
+      selectedMessageId = null;
+      homeworkCache = null;
+      correspondenceCache = null;
+      window.PweStore?.invalidateCache?.();
+    }
+  }
+
+  function applyNavPermissions(session) {
+    if (!session) return;
+    const role = session.role;
+    $$('.nav-link[data-route]').forEach((link) => {
+      const route = link.dataset.route;
+      const allowed = canViewRoute(role, route);
+      link.classList.toggle('hidden', !allowed);
+      link.classList.toggle('is-restricted', !allowed);
+      link.setAttribute('aria-hidden', allowed ? 'false' : 'true');
+    });
+    const actionRoutes = {
+      'add-class': 'classes',
+      'edit-class': 'classes',
+      'archive-class': 'classes',
+      'delete-class': 'classes',
+      'add-student': 'students',
+      'edit-student': 'students',
+      'archive-student': 'students',
+      'add-report': 'reports',
+      'publish-reports': 'reports',
+      'record-fee-payment': 'fees',
+      'compose-message': 'messages',
+      'reply-message': 'messages',
+      'store-custom-request': 'store',
+      'store-request': 'store',
+      'homework-add': 'homework',
+    };
+    $$('[data-action]').forEach((el) => {
+      const route = actionRoutes[el.dataset.action];
+      if (!route) return;
+      const writable = canWriteRoute(role, route);
+      el.classList.toggle('hidden', !writable);
+      if (el.tagName === 'BUTTON') el.disabled = !writable;
+    });
+    $$('[data-require-write]').forEach((el) => {
+      const route = el.dataset.requireWrite || getCurrentRoute();
+      const writable = canWriteRoute(role, route);
+      el.classList.toggle('hidden', !writable);
+      if (el.tagName === 'BUTTON' || el.tagName === 'INPUT') {
+        el.disabled = !writable;
+      }
+    });
+  }
+
+  function requireWritableMode(routeOrAction) {
     const mode = window.PweApi.getMode();
     if (window.PweApi.isDemo()) {
       safeToast(
@@ -146,6 +187,22 @@
     }
     if (mode === 'unconfigured') {
       safeToast('Configuration requise', window.PweApi.getConfigError() || 'Configuration manquante.');
+      return false;
+    }
+    const session = getSession();
+    if (!session) return false;
+    const actionRoutes = {
+      'compose-message': 'messages',
+      'reply-message': 'messages',
+      'manage_store': 'store',
+    };
+    const route = actionRoutes[routeOrAction] || routeOrAction || getCurrentRoute();
+    if (route && ROUTES.includes(route) && !canWriteRoute(session.role, route)) {
+      safeToast('Accès limité', roleHint(session.role) || 'Votre rôle ne permet pas cette modification.');
+      return false;
+    }
+    if (['send_messages', 'manage_store'].includes(routeOrAction) && !canPerform(session.role, routeOrAction)) {
+      safeToast('Accès limité', roleHint(session.role) || 'Action non autorisée pour votre rôle.');
       return false;
     }
     return true;
@@ -171,48 +228,8 @@
     lastActionAt = now;
     handleAction(action, ctx);
   }
-  const ROUTE_SECTIONS = {
-    dashboard: 'Pilotage',
-    statistics: 'Pilotage',
-    profile: 'Pilotage',
-    classes: 'Scolarité',
-    students: 'Scolarité',
-    teachers: 'Scolarité',
-    reports: 'Scolarité',
-    fees: 'Administration',
-    messages: 'Administration',
-    settings: 'Administration',
-  };
 
-  const ROUTES = [
-    'dashboard',
-    'statistics',
-    'profile',
-    'classes',
-    'students',
-    'teachers',
-    'reports',
-    'homework',
-    'fees',
-    'messages',
-    'store',
-    'settings',
-  ];
-
-  const ROLE_LABELS = {
-    school_owner: 'Promoteur',
-    school_director: 'Directeur',
-    school_secretary: 'Secrétaire',
-    school_accountant: 'Comptable',
-    teacher: 'Enseignant',
-    class_master: 'Maître de classe',
-    school_staff: 'Personnel',
-  };
-
-  const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => document.querySelectorAll(sel);
-
-  const loginScreen = $('#loginScreen');
+  let listCacheSchoolId = null;
   const appShell = $('#appShell');
   const loginForm = $('#loginForm');
   const loginError = $('#loginError');
@@ -417,9 +434,7 @@
     }
 
     localStorage.setItem(ACTIVE_SCHOOL_KEY, schoolId);
-    listCache = {};
-    schoolProfile = null;
-    selectedMessageId = null;
+    ensureSchoolCache(schoolId);
 
     const staffSession = result.staffSession || (await window.PweApi.fetchStaffSession());
     const schools = await window.PweApi.fetchUserSchools();
@@ -467,11 +482,14 @@
     });
   }
 
-  function renderSchoolDrawerNav(mode) {
+  function renderSchoolDrawerNav(mode, role = getSession()?.role) {
     const nav = $('#schoolDrawerNav');
     if (!nav) return;
 
-    const sections = SCHOOL_DRAWER_NAV[mode] || SCHOOL_DRAWER_NAV.promoter;
+    let sections = SCHOOL_DRAWER_NAV[mode] || SCHOOL_DRAWER_NAV.promoter;
+    if (mode === 'promoter' && role) {
+      sections = filterNavSections(role, sections);
+    }
     nav.innerHTML = sections
       .map(
         (section) => `
@@ -532,7 +550,7 @@
 
     const mode = getProfileMode();
     syncSchoolDrawerTabs(mode);
-    renderSchoolDrawerNav(mode);
+    renderSchoolDrawerNav(mode, session.role);
     syncAppHeaderProfileMode(mode);
   }
 
@@ -667,46 +685,6 @@
     lastError: null,
   };
 
-  function sparkline(values) {
-    const w = 86;
-    const h = 22;
-    const pad = 2;
-    const v = (values || []).slice(0, 12);
-    if (v.length < 2) return '';
-
-    const min = Math.min(...v);
-    const max = Math.max(...v);
-    const range = Math.max(1e-9, max - min);
-
-    const dx = (w - pad * 2) / (v.length - 1);
-    const pts = v
-      .map((x, i) => {
-        const px = pad + i * dx;
-        const py = pad + (1 - (x - min) / range) * (h - pad * 2);
-        return `${px.toFixed(1)},${py.toFixed(1)}`;
-      })
-      .join(' ');
-
-    const last = pts.split(' ').at(-1);
-    return `
-      <svg class="spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="Tendance">
-        <polyline class="spark-line" points="${pts}" />
-        <circle class="spark-dot" cx="${last.split(',')[0]}" cy="${last.split(',')[1]}" r="1.6" />
-      </svg>`;
-  }
-
-  function stableTrend(seed, scale = 1) {
-    // Petit générateur déterministe (pas d'aléatoire global) pour un rendu stable.
-    let s = Math.max(1, Number(seed) || 1);
-    const out = [];
-    for (let i = 0; i < 10; i++) {
-      s = (s * 9301 + 49297) % 233280;
-      const r = s / 233280; // 0..1
-      out.push((0.6 + r * 0.8) * scale);
-    }
-    return out;
-  }
-
   function getSession() {
     try {
       const raw = sessionStorage.getItem(SESSION_KEY);
@@ -723,21 +701,19 @@
   function clearSession() {
     sessionStorage.removeItem(SESSION_KEY);
     listCache = {};
+    listCacheSchoolId = null;
     schoolProfile = null;
-  }
-
-  function badge(status) {
-    return `<span class="badge badge-${status}">${String(status).replace('_', ' ')}</span>`;
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    }[ch]));
+    window.PweStore?.invalidateCache?.();
   }
 
   function rowActions(id, type, extra = {}) {
     if (!id) return '—';
+    const session = getSession();
+    const routeMap = { class: 'classes', student: 'students' };
+    const route = routeMap[type];
+    if (session && route && !canWriteRoute(session.role, route)) {
+      return '<span class="row-actions-muted" title="Lecture seule">—</span>';
+    }
     const deleteBtn =
       extra.allowDelete && type === 'class'
         ? `
@@ -764,18 +740,11 @@
       </div>`;
   }
 
-  function formatMoney(amount) {
-    return `${Number(amount || 0).toLocaleString('fr-FR')} FCFA`;
-  }
 
   function clearPweUrlParams() {
     if (!location.search) return;
     const hash = location.hash || '';
     history.replaceState(null, '', `${location.pathname}${hash}`);
-  }
-
-  function normalize(str) {
-    return (str || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
   }
 
   function filterRows(rows, searchKey, filterKey, searchFields) {
@@ -940,229 +909,46 @@
       .join('');
   }
 
-  function openModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('hidden');
-    el.setAttribute('aria-hidden', 'false');
-    window.PWE_DIAG.lastModal = id;
-    document.body.classList.add('modal-open');
-    const first = el.querySelector(
-      '.modal-body input, .modal-body select, .modal-body textarea'
-    );
-    if (first) window.setTimeout(() => first.focus(), 0);
-  }
-
-  function closeModals() {
-    document.querySelectorAll('.modal').forEach((m) => {
-      m.classList.add('hidden');
-      m.setAttribute('aria-hidden', 'true');
-    });
-    document.body.classList.remove('modal-open');
-  }
 
   async function refreshClasses(session) {
     listCache.classes = null;
     listCache.classes = await window.PweApi.fetchClasses(session.schoolId);
-    await renderClasses(session);
+    await getRenderers().classes(session);
   }
 
   async function refreshStudents(session) {
     listCache.students = null;
     listCache.students = await window.PweApi.fetchStudents(session.schoolId);
-    await renderStudents(session);
+    await getRenderers().students(session);
   }
 
   async function refreshTeachers(session) {
     listCache.teachers = null;
     listCache.teachers = await window.PweApi.fetchTeachers(session.schoolId);
-    await renderTeachers(session);
+    await getRenderers().teachers(session);
   }
 
   async function refreshReports(session) {
     listCache.reports = null;
-    await renderReports(session);
+    await getRenderers().reports(session);
   }
 
   async function refreshFees(session) {
     listCache.fees = null;
-    await renderFees(session);
+    await getRenderers().fees(session);
   }
 
   async function refreshMessages() {
+    const session = getSession();
+    if (!session) return;
     listCache.messages = null;
-    await renderMessages();
+    await getRenderers().messages(session);
   }
 
   function invalidateSchoolProfile() {
     schoolProfile = null;
   }
 
-  async function fillStudentClassesSelect(session) {
-    const sel = document.getElementById('studentClassSelect');
-    if (!sel) return;
-
-    const keep = sel.querySelector('option[value=""]')?.outerHTML || '<option value="">— Non assigné —</option>';
-    sel.innerHTML = keep;
-
-    const classes = await window.PweApi.fetchClasses(session.schoolId);
-    classes
-      .filter((c) => c.status === 'active')
-      .forEach((c) => {
-        const o = document.createElement('option');
-        o.value = c.id;
-        o.textContent = c.name;
-        sel.appendChild(o);
-      });
-  }
-
-  async function fillStudentSelect(selectId, session) {
-    const sel = document.getElementById(selectId);
-    if (!sel) return;
-    const keep = sel.querySelector('option[value=""]')?.outerHTML || '<option value="">— Choisir —</option>';
-    const students = await window.PweApi.fetchStudentsForSelect(session.schoolId);
-    sel.innerHTML = keep + students.map((s) => `<option value="${s.id}">${s.label}</option>`).join('');
-  }
-
-  async function fillEditProfileForm(session) {
-    const s = await ensureSchoolProfile(session);
-    const form = document.getElementById('editProfileForm');
-    if (!form) return;
-    if (form.schoolCode) form.schoolCode.value = s.code || '—';
-    if (form.name) form.name.value = s.name || '';
-    if (form.city) form.city.value = s.city || '';
-    form.phone.value = s.phone || '';
-    form.email.value = s.email || '';
-    form.commune.value = s.commune || '';
-    form.address.value = s.address || '';
-    form.director.value = s.director || '';
-    if (form.promoter) form.promoter.value = s.promoter || '';
-    form.academicYear.value = s.academicYear || '';
-    form.description.value = s.description || '';
-  }
-
-  async function fillFeeModalSelects(session) {
-    const feeSel = document.getElementById('feeSelect');
-    if (!feeSel) return;
-
-    const unpaid = await window.PweApi.fetchUnpaidFees(session.schoolId);
-    feeSel.innerHTML =
-      '<option value="">— Nouvelle ligne —</option>' +
-      unpaid.map((f) => `<option value="${f.feeId}">${f.label}</option>`).join('');
-
-    await fillStudentSelect('feeStudentSelect', session);
-  }
-
-  async function fillEditStudentClassesSelect(session, selectedClassId) {
-    const sel = document.getElementById('editStudentClassSelect');
-    if (!sel) return;
-    const keep = sel.querySelector('option[value=""]')?.outerHTML || '<option value="">— Non assigné —</option>';
-    sel.innerHTML = keep;
-
-    if (window.PweApi.getMode() === 'supabase') {
-      const client = window.PweApi.getClient();
-      const { data } = await client
-        .from('school_classes')
-        .select('id, name, status')
-        .eq('school_id', session.schoolId)
-        .order('name');
-      (data || [])
-        .filter((c) => c.status === 'active')
-        .forEach((c) => {
-          const o = document.createElement('option');
-          o.value = c.id;
-          o.textContent = c.name;
-          sel.appendChild(o);
-        });
-    } else {
-      const classes = await window.PweApi.fetchClasses(session.schoolId);
-      classes
-        .filter((c) => c.status === 'active')
-        .forEach((c) => {
-          const o = document.createElement('option');
-          o.value = c.id;
-          o.textContent = c.name;
-          sel.appendChild(o);
-        });
-    }
-
-    if (selectedClassId) sel.value = selectedClassId;
-  }
-
-  function fillEditClassForm(cls) {
-    const form = document.getElementById('editClassForm');
-    if (!form || !cls) return;
-    form.classId.value = cls.id || '';
-    form.name.value = cls.name || '';
-    form.level.value = cls.level && cls.level !== '—' ? cls.level : '';
-    form.academicYear.value = cls.year && cls.year !== '—' ? cls.year : '';
-    form.status.value = cls.status || 'active';
-  }
-
-  async function fillEditStudentForm(session, student) {
-    const form = document.getElementById('editStudentForm');
-    if (!form || !student) return;
-    form.studentId.value = student.id || '';
-    form.firstName.value = student.firstName || student.name?.split(' ')[0] || '';
-    form.lastName.value = student.lastName || '';
-    form.gender.value = student.gender && student.gender !== '—' ? student.gender : '';
-    form.studentCode.value = student.code && student.code !== '—' ? student.code : '';
-    form.status.value = student.status || 'active';
-    await fillEditStudentClassesSelect(session, student.classId || '');
-  }
-
-  async function renderStudentParentLinks(studentId) {
-    const list = $('#linkStudentParentList');
-    if (!list) return;
-
-    list.innerHTML = '<li class="parent-link-empty">Chargement…</li>';
-    try {
-      const parents = await window.PweApi.fetchStudentParents(studentId);
-      if (!parents.length) {
-        list.innerHTML = '<li class="parent-link-empty">Aucun parent lié pour le moment.</li>';
-        return;
-      }
-
-      list.innerHTML = parents
-        .map((parent) => {
-          const rel = PARENT_RELATIONSHIP_LABELS[parent.relationship] || parent.relationship || '—';
-          return `
-            <li class="parent-link-item">
-              <div class="parent-link-item-copy">
-                <strong>${parent.parentName || '—'}</strong>
-                <span><code>${parent.parentCode || '—'}</code> · ${rel}</span>
-              </div>
-              <button type="button" class="btn secondary-btn btn-sm parent-link-remove"
-                data-action="unlink-student-parent" data-id="${parent.id}" title="Retirer ce parent">
-                Retirer
-              </button>
-            </li>`;
-        })
-        .join('');
-    } catch (err) {
-      list.innerHTML = `<li class="parent-link-empty">Impossible de charger les parents.${err?.message ? ` (${err.message})` : ''}</li>`;
-    }
-  }
-
-  async function openLinkStudentParentModal(student) {
-    const idInput = $('#linkStudentParentId');
-    if (idInput) idInput.value = student.id;
-
-    const sub = $('#linkStudentParentSubtitle');
-    if (sub) {
-      sub.innerHTML = `Élève : <strong>${student.name}</strong> — liez un ou plusieurs profils parent <code>PAR-…</code>.`;
-    }
-
-    const form = document.getElementById('linkStudentParentForm');
-    if (form) {
-      form.reset();
-      const rel = form.querySelector('[name="relationship"]');
-      if (rel) rel.value = 'guardian';
-    }
-
-    await renderStudentParentLinks(student.id);
-    openModal('modalLinkStudentParent');
-  }
 
   function findClassById(id) {
     return (listCache.classes || []).find((c) => c.id === id);
@@ -1178,783 +964,7 @@
     return schoolProfile;
   }
 
-  async function renderDashboard(session) {
-    const profile = await ensureSchoolProfile(session);
-    const dash = await window.PweApi.fetchDashboard(session.schoolId);
-    const roleLabel = ROLE_LABELS[session.role] || session.role;
 
-    const greeting = $('#dashboardGreeting');
-    if (greeting) greeting.textContent = dashboardGreeting();
-
-    const heroTitle = $('#dashboardHeroTitle');
-    if (heroTitle) heroTitle.textContent = profile.name || 'Votre école';
-
-    const heroSub = $('#dashboardHeroSub');
-    if (heroSub) {
-      heroSub.textContent = `Pilotage ${roleLabel.toLowerCase()} — année ${profile.academicYear || '2025-2026'}`;
-    }
-
-    const heroChips = $('#dashboardHeroChips');
-    if (heroChips) {
-      heroChips.innerHTML = `
-        <span class="dash-hero-chip">
-          <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
-          ${profile.academicYear || '2025-2026'}
-        </span>
-        <span class="dash-hero-chip dash-hero-chip--code">
-          <svg aria-hidden="true"><use href="#i-building"></use></svg>
-          ${profile.code || '—'}
-        </span>
-        <span class="dash-hero-chip dash-hero-chip--link" data-dash-route="statistics">
-          <svg aria-hidden="true"><use href="#i-chart"></use></svg>
-          Voir les statistiques
-        </span>`;
-      heroChips.querySelectorAll('[data-dash-route]').forEach((el) => {
-        el.addEventListener('click', () => navigate(el.getAttribute('data-dash-route')));
-      });
-    }
-
-    const stats = [
-      {
-        key: 'students',
-        value: dash.studentsCount,
-        label: 'Élèves inscrits',
-        hint: 'Effectif actif',
-        trend: stableTrend(dash.studentsCount, 1),
-      },
-      {
-        key: 'classes',
-        value: dash.classesCount,
-        label: 'Classes actives',
-        hint: 'Organisation',
-        trend: stableTrend(dash.classesCount, 1),
-      },
-      {
-        key: 'staff',
-        value: dash.teachersCount,
-        label: 'Personnel actif',
-        hint: 'Équipe',
-        trend: stableTrend(dash.teachersCount, 1),
-      },
-      {
-        key: 'reports',
-        value: dash.reportsPending,
-        label: 'Bulletins en attente',
-        hint: 'À publier',
-        trend: stableTrend(dash.reportsPending + 3, 1),
-      },
-      {
-        key: 'fees',
-        value: dash.feesUnpaid,
-        label: 'Frais à relancer',
-        hint: 'Impayés / partiels',
-        trend: stableTrend(dash.feesUnpaid + 5, 1),
-      },
-      {
-        key: 'parents',
-        value: dash.parentsLinked,
-        label: 'Parents liés',
-        hint: 'Comptes connectés',
-        trend: stableTrend(dash.parentsLinked + 7, 1),
-      },
-    ];
-
-    $('#dashboardStats').innerHTML = stats
-      .map((s) => {
-        const meta = DASH_STAT_META[s.key] || { icon: 'i-chart', tone: 'teal', route: 'dashboard' };
-        return `
-        <button type="button" class="stat-card stat-card--${meta.tone}" data-dash-route="${meta.route}">
-          <div class="stat-card-icon" aria-hidden="true">
-            <svg><use href="#${meta.icon}"></use></svg>
-          </div>
-          <div class="stat-card-body">
-            <div class="stat-card-value">${s.value}</div>
-            <div class="stat-card-label">${s.label}</div>
-            <div class="stat-card-hint">${s.hint}</div>
-          </div>
-          <div class="stat-card-spark">${sparkline(s.trend)}</div>
-        </button>`;
-      })
-      .join('');
-
-    $('#dashboardStats').querySelectorAll('[data-dash-route]').forEach((el) => {
-      el.addEventListener('click', () => navigate(el.getAttribute('data-dash-route')));
-    });
-
-    const activity = dash.activity || [];
-    $('#activityList').innerHTML =
-      activity.length === 0
-        ? `<li class="dash-empty">Aucune activité récente pour le moment.</li>`
-        : activity
-            .map(
-              (a) => `
-              <li class="dash-feed-item">
-                <span class="dash-feed-icon">
-                  <svg aria-hidden="true"><use href="#${inferFeedIcon(a.text)}"></use></svg>
-                </span>
-                <div class="dash-feed-copy">
-                  <span class="dash-feed-text">${a.text}</span>
-                  <span class="dash-feed-time">${a.time}</span>
-                </div>
-              </li>`
-            )
-            .join('');
-
-    const todos = dash.todos || [];
-    const todoCount = $('#dashboardTodoCount');
-    if (todoCount) todoCount.textContent = String(todos.length);
-
-    $('#todoList').innerHTML =
-      todos.length === 0
-        ? `<li class="dash-empty">Rien en attente — bon travail.</li>`
-        : todos
-            .map((t) => {
-              const route = inferTodoRoute(t.text);
-              return `
-              <li>
-                <button type="button" class="dash-todo-item" data-dash-route="${route}">
-                  <span class="dash-todo-dot" aria-hidden="true"></span>
-                  <span class="dash-todo-copy">
-                    <span class="dash-todo-text">${t.text}</span>
-                    <span class="dash-todo-tag">${t.time}</span>
-                  </span>
-                  <svg class="dash-todo-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41.04Z" fill="currentColor"/></svg>
-                </button>
-              </li>`;
-            })
-            .join('');
-
-    $('#todoList').querySelectorAll('[data-dash-route]').forEach((el) => {
-      el.addEventListener('click', () => navigate(el.getAttribute('data-dash-route')));
-    });
-
-    const qa = [
-      {
-        title: 'Inscrire un élève',
-        desc: 'Ajouter et affecter à une classe',
-        kpi: `${dash.studentsCount} élèves`,
-        route: 'students',
-        icon: 'i-users',
-        primary: true,
-        action: 'add-student',
-      },
-      {
-        title: 'Créer une classe',
-        desc: 'Organiser les effectifs',
-        kpi: `${dash.classesCount} classes`,
-        route: 'classes',
-        icon: 'i-grid',
-        action: 'add-class',
-      },
-      {
-        title: 'Publier des bulletins',
-        desc: 'Finaliser le trimestre',
-        kpi: `${dash.reportsPending} en attente`,
-        route: 'reports',
-        icon: 'i-upload',
-        action: 'publish-reports',
-      },
-      {
-        title: 'Message aux parents',
-        desc: 'Annonce ou communication',
-        kpi: 'Communication',
-        route: 'messages',
-        icon: 'i-compose',
-        action: 'compose-message',
-      },
-    ];
-
-    const qaEl = $('#quickActions');
-    if (qaEl) {
-      qaEl.innerHTML = qa
-        .map(
-          (x) => `
-          <button type="button" class="dash-action-btn${x.primary ? ' dash-action-btn--primary' : ''}"
-            data-qa-route="${x.route}"${x.action ? ` data-action="${x.action}"` : ''}>
-            <span class="dash-action-icon">
-              <svg aria-hidden="true"><use href="#${x.icon}"></use></svg>
-            </span>
-            <span class="dash-action-copy">
-              <span class="dash-action-title">${x.title}</span>
-              <span class="dash-action-desc">${x.desc}</span>
-            </span>
-            <span class="dash-action-kpi">${x.kpi}</span>
-          </button>`
-        )
-        .join('');
-
-      qaEl.querySelectorAll('[data-qa-route]').forEach((b) => {
-        b.addEventListener('click', (e) => {
-          const action = b.getAttribute('data-action');
-          if (action) {
-            dispatchAction(action);
-            return;
-          }
-          const r = b.getAttribute('data-qa-route');
-          if (r) navigate(r);
-        });
-      });
-    }
-  }
-
-  async function renderProfile(session) {
-    const s = await ensureSchoolProfile(session);
-    applySchoolBranding(s);
-
-    const heroTitle = $('#profileHeroTitle');
-    if (heroTitle) heroTitle.textContent = s.name || '—';
-    const heroSub = $('#profileHeroSub');
-    if (heroSub) {
-      heroSub.textContent = [s.city, s.code].filter(Boolean).join(' · ') || '—';
-    }
-
-    const fields = [
-      ['Nom', s.name],
-      ['Ville', s.city],
-      ['Commune', s.commune],
-      ['Adresse', s.address],
-      ['Téléphone', s.phone],
-      ['Email', s.email],
-      ['Code école', s.code],
-      ['Directeur', s.director],
-      ['Promoteur', s.promoter],
-      ['Année scolaire', s.academicYear],
-      ['Statut', s.status],
-      ['Description', s.description],
-    ];
-
-    $('#profileGrid').innerHTML = fields
-      .map(
-        ([label, val]) => `
-        <div class="profile-field panel">
-          <label>${label}</label>
-          <p>${val || '—'}</p>
-        </div>`
-      )
-      .join('');
-  }
-
-  async function renderClasses(session) {
-    if (!listCache.classes) {
-      listCache.classes = await window.PweApi.fetchClasses(session.schoolId);
-    }
-    const rows = filterRows(listCache.classes, 'classes', 'classes', [
-      'name',
-      'level',
-      'master',
-    ]);
-    $('#classesTable').innerHTML =
-      rows.length === 0
-        ? `<tr class="empty-row"><td colspan="7">Aucune classe ne correspond à vos filtres.</td></tr>`
-        : rows
-            .map(
-              (c) => `
-              <tr>
-                <td><strong>${c.name}</strong></td>
-                <td>${c.level}</td>
-                <td>${c.year}</td>
-                <td>${c.master}</td>
-                <td>${c.students}</td>
-                <td>${badge(c.status)}</td>
-                <td>${rowActions(c.id, 'class', { allowDelete: true })}</td>
-              </tr>`
-            )
-            .join('');
-  }
-
-  async function renderStudents(session) {
-    if (!listCache.students) {
-      listCache.students = await window.PweApi.fetchStudents(session.schoolId);
-    }
-    const rows = filterRows(listCache.students, 'students', 'students', [
-      'name',
-      'class',
-      'code',
-    ]);
-    $('#studentsTable').innerHTML =
-      rows.length === 0
-        ? `<tr class="empty-row"><td colspan="7">Aucun élève ne correspond à vos filtres.</td></tr>`
-        : rows
-            .map(
-              (s) => `
-              <tr>
-                <td><strong>${s.name}</strong></td>
-                <td>${s.class}</td>
-                <td><code>${s.code}</code></td>
-                <td>${s.gender}</td>
-                <td><span class="parent-count-pill">${s.parents || 0}</span></td>
-                <td>${badge(s.status)}</td>
-                <td>${rowActions(s.id, 'student')}</td>
-              </tr>`
-            )
-            .join('');
-  }
-
-  async function renderStatistics() {
-    const s = await window.PweApi.fetchStatistics(session.schoolId);
-    const pct = Math.round((Number(s.report_publish_rate) || 0) * 100);
-
-    const overview = [
-      { value: s.students_active ?? 0, label: 'Élèves actifs', hint: `${s.students_archived ?? 0} archivés / transférés` },
-      { value: s.classes_active ?? 0, label: 'Classes actives', hint: `${s.classes_archived ?? 0} archivées` },
-      { value: s.reports_published ?? 0, label: 'Bulletins publiés', hint: `${s.reports_pending ?? 0} en attente` },
-      { value: s.fees_unpaid ?? 0, label: 'Frais impayés', hint: formatMoney(s.fees_unpaid_amount) },
-      { value: s.announcements_count ?? 0, label: 'Messages envoyés', hint: 'Annonces PWE' },
-      { value: `${pct}%`, label: 'Taux publication', hint: `${s.reports_total ?? 0} bulletins au total` },
-    ];
-
-    $('#statsOverview').innerHTML = overview
-      .map(
-        (item) => `
-        <div class="stat-card">
-          <div class="stat-top">
-            <div>
-              <div class="value">${item.value}</div>
-              <div class="label">${item.label}</div>
-              <div class="stat-hint">${item.hint}</div>
-            </div>
-          </div>
-        </div>`
-      )
-      .join('');
-
-    const byClass = s.students_by_class || [];
-    $('#statsByClassTable').innerHTML =
-      byClass.length === 0
-        ? `<tr class="empty-row"><td colspan="3">Aucune classe active.</td></tr>`
-        : byClass
-            .map(
-              (r) => `
-              <tr>
-                <td><strong>${r.class_name}</strong></td>
-                <td>${r.level || '—'}</td>
-                <td>${r.student_count}</td>
-              </tr>`
-            )
-            .join('');
-
-    const avgs = s.class_averages || [];
-    $('#statsAveragesTable').innerHTML =
-      avgs.length === 0
-        ? `<tr class="empty-row"><td colspan="3">Pas encore de moyennes publiées.</td></tr>`
-        : avgs
-            .map(
-              (r) => `
-              <tr>
-                <td><strong>${r.class_name}</strong></td>
-                <td>${String(r.avg_average).replace('.', ',')}</td>
-                <td>${r.report_count}</td>
-              </tr>`
-            )
-            .join('');
-
-    const paidAmt = formatMoney(s.fees_paid_amount);
-    const unpaidAmt = formatMoney(s.fees_unpaid_amount);
-    $('#statsReportProgress').innerHTML = `
-      <div class="progress-meta">
-        <span>${s.reports_published ?? 0} publiés / ${s.reports_total ?? 0} total</span>
-        <span>${pct}%</span>
-      </div>
-      <div class="progress-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
-        <div class="progress-fill" style="width:${pct}%"></div>
-      </div>
-      <div class="progress-foot">
-        <span>Frais payés : <strong>${paidAmt}</strong> (${s.fees_paid ?? 0} lignes)</span>
-        <span>Impayés : <strong>${unpaidAmt}</strong> (${s.fees_unpaid ?? 0} lignes)</span>
-      </div>`;
-  }
-
-  async function renderTeachers(session) {
-    if (!listCache.teachers) {
-      listCache.teachers = await window.PweApi.fetchTeachers(session.schoolId);
-    }
-    const rows = filterRows(listCache.teachers, 'teachers', 'teachers', [
-      'name',
-      'code',
-      'subject',
-      'role',
-    ]);
-    $('#teachersTable').innerHTML =
-      rows.length === 0
-        ? `<tr class="empty-row"><td colspan="5">Aucun membre actif trouvé.</td></tr>`
-        : rows
-            .map(
-              (t) => `
-              <tr>
-                <td><strong>${t.name}</strong></td>
-                <td><code>${t.code || t.subject}</code></td>
-                <td>${ROLE_LABELS[t.role] || t.role}</td>
-                <td>${t.classes}</td>
-                <td>${badge(t.status)}</td>
-              </tr>`
-            )
-            .join('');
-  }
-
-  async function renderReports(session) {
-    if (!listCache.reports) {
-      listCache.reports = await window.PweApi.fetchReports(session.schoolId);
-    }
-    const rows = filterRows(listCache.reports, 'reports', 'reports', [
-      'student',
-      'class',
-      'term',
-    ]);
-    $('#reportsTable').innerHTML =
-      rows.length === 0
-        ? `<tr class="empty-row"><td colspan="5">Aucun bulletin ne correspond à vos filtres.</td></tr>`
-        : rows
-            .map(
-              (r) => `
-              <tr>
-                <td><strong>${r.student}</strong></td>
-                <td>${r.class}</td>
-                <td>${r.term}</td>
-                <td>${r.average}</td>
-                <td>${badge(r.status)}</td>
-              </tr>`
-            )
-            .join('');
-  }
-
-  async function renderFees(session) {
-    if (!listCache.fees) {
-      listCache.fees = await window.PweApi.fetchFees(session.schoolId);
-    }
-    const rows = filterRows(listCache.fees, 'fees', 'fees', ['student', 'class']);
-    $('#feesTable').innerHTML =
-      rows.length === 0
-        ? `<tr class="empty-row"><td colspan="5">Aucune ligne de frais ne correspond à vos filtres.</td></tr>`
-        : rows
-            .map(
-              (f) => `
-              <tr>
-                <td><strong>${f.student}</strong></td>
-                <td>${f.class}</td>
-                <td>${f.amount}</td>
-                <td>${f.due}</td>
-                <td>${badge(f.status)}</td>
-              </tr>`
-            )
-            .join('');
-  }
-
-  function messageInitials(from) {
-    const parts = String(from || '')
-      .replace(/^(parent|walaha)\s*—\s*/i, '')
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return (parts[0] || 'M').slice(0, 2).toUpperCase();
-  }
-
-  function audienceLabel(audience) {
-    if (!audience) return 'Annonce générale';
-    if (audience === 'all_parents') return 'Tous les parents';
-    return String(audience);
-  }
-
-  function filterMessages(rows) {
-    const q = ($('#messagesSearch')?.value || '').trim().toLowerCase();
-    const f = $('#messagesFilter')?.value || 'all';
-    return (rows || []).filter((m) => {
-      if (f === 'unread' && !m.unread) return false;
-      if (f === 'read' && m.unread) return false;
-      if (!q) return true;
-      const hay = `${m.from || ''} ${m.subject || ''} ${m.body || ''}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }
-
-  function clearMessagePreview() {
-    selectedMessageId = null;
-    $('#messagesPreviewEmpty')?.classList.remove('hidden');
-    $('#messagesPreviewCard')?.classList.add('hidden');
-    $$('#messagesList .messages-item').forEach((el) => el.classList.remove('active'));
-  }
-
-  function showMessagePreview(message) {
-    if (!message) {
-      clearMessagePreview();
-      return;
-    }
-    selectedMessageId = message.id;
-    $$('#messagesList .messages-item').forEach((el) => {
-      el.classList.toggle('active', el.dataset.messageId === String(message.id));
-    });
-    $('#messagesPreviewEmpty')?.classList.add('hidden');
-    const card = $('#messagesPreviewCard');
-    card?.classList.remove('hidden');
-    const fromEl = $('#messagesPreviewFrom');
-    if (fromEl) fromEl.textContent = message.from || '—';
-    const subjectEl = $('#messagesPreviewSubject');
-    if (subjectEl) subjectEl.textContent = message.subject || '—';
-    const dateEl = $('#messagesPreviewDate');
-    if (dateEl) dateEl.textContent = message.date || '—';
-    const metaEl = $('#messagesPreviewMeta');
-    if (metaEl) {
-      metaEl.innerHTML = `
-        <span class="messages-preview-chip">${message.unread ? 'Non lu' : 'Lu'}</span>
-        <span class="messages-preview-chip">${audienceLabel(message.audience)}</span>`;
-    }
-    const bodyEl = $('#messagesPreviewBody');
-    if (bodyEl) {
-      bodyEl.textContent =
-        message.body || 'Aucun contenu détaillé pour ce message.';
-    }
-  }
-
-  async function renderMessages() {
-    if (!listCache.messages) {
-      listCache.messages = await window.PweApi.fetchMessages(session.schoolId);
-    }
-    const all = (listCache.messages || []).map((m, i) => ({
-      ...m,
-      id: m.id || `msg-${i}`,
-    }));
-    listCache.messages = all;
-
-    const rows = filterMessages(all);
-    const unread = all.filter((m) => m.unread).length;
-    const read = all.length - unread;
-
-    const statsEl = $('#messagesStats');
-    if (statsEl) {
-      statsEl.innerHTML = `
-        <article class="messages-stat messages-stat--total">
-          <span class="messages-stat-value">${all.length}</span>
-          <span class="messages-stat-label">Total</span>
-        </article>
-        <article class="messages-stat messages-stat--unread">
-          <span class="messages-stat-value">${unread}</span>
-          <span class="messages-stat-label">Non lus</span>
-        </article>
-        <article class="messages-stat messages-stat--read">
-          <span class="messages-stat-value">${read}</span>
-          <span class="messages-stat-label">Lus</span>
-        </article>`;
-    }
-
-    const list = $('#messagesList');
-    if (!list) return;
-
-    if (!rows.length) {
-      list.innerHTML = `<li class="messages-empty">Aucun message ne correspond à votre recherche.</li>`;
-      clearMessagePreview();
-      return;
-    }
-
-    list.innerHTML = rows
-      .map(
-        (m) => `
-        <li>
-          <button type="button" class="messages-item${m.unread ? ' messages-item--unread' : ''}${selectedMessageId === m.id ? ' active' : ''}"
-            data-message-id="${m.id}">
-            <span class="messages-item-avatar" aria-hidden="true">${messageInitials(m.from)}</span>
-            <span class="messages-item-copy">
-              <span class="messages-item-top">
-                <strong class="messages-item-from">${m.from}</strong>
-                <time class="messages-item-date">${m.date}</time>
-              </span>
-              <span class="messages-item-subject">${m.subject}</span>
-              <span class="messages-item-snippet">${m.body || ''}</span>
-            </span>
-            ${m.unread ? '<span class="messages-item-dot" aria-label="Non lu"></span>' : ''}
-          </button>
-        </li>`
-      )
-      .join('');
-
-    list.querySelectorAll('[data-message-id]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const msg = all.find((m) => String(m.id) === btn.dataset.messageId);
-        showMessagePreview(msg);
-      });
-    });
-
-    if (!selectedMessageId || !rows.some((m) => m.id === selectedMessageId)) {
-      showMessagePreview(rows[0]);
-    } else {
-      showMessagePreview(all.find((m) => m.id === selectedMessageId));
-    }
-  }
-
-  async function renderSettings(session) {
-    const profile = await ensureSchoolProfile(session);
-    const roleLabel = ROLE_LABELS[session.role] || session.role;
-    const isDemo = window.PweApi.isDemo();
-
-    const set = (id, text) => {
-      const el = $(`#${id}`);
-      if (el) el.textContent = text;
-    };
-
-    set('settingsSchoolName', profile.name || '—');
-    set('settingsSchoolCode', profile.code || '—');
-    set('settingsRole', roleLabel);
-    set('settingsYear', profile.academicYear || '2025-2026');
-    set('settingsDataMode', isDemo ? 'Démo locale — données fictives' : 'Production — connecté à Supabase');
-    set('settingsBuild', BUILD);
-
-    const pill = $('#settingsDataPill');
-    if (pill) {
-      pill.textContent = isDemo ? 'Démo' : 'Live';
-      pill.classList.toggle('settings-pill--demo', isDemo);
-      pill.classList.toggle('settings-pill--live', !isDemo);
-    }
-
-    syncThemeControls();
-  }
-
-  function storePriceLabel(m) {
-    const amount = m.price_amount != null ? Number(m.price_amount).toLocaleString('fr-FR') : null;
-    switch (m.pricing_type) {
-      case 'included': return 'Inclus';
-      case 'quote': return 'Sur devis';
-      case 'annual': return amount ? `${amount} FCFA / an` : 'Annuel';
-      case 'monthly': return amount ? `${amount} FCFA / mois` : 'Mensuel';
-      case 'per_student': return amount ? `${amount} FCFA / élève` : 'Par élève';
-      case 'per_school': return amount ? `${amount} FCFA / école` : 'Par école';
-      case 'one_time': return amount ? `${amount} FCFA (unique)` : 'Paiement unique';
-      default: return amount ? `${amount} FCFA` : '—';
-    }
-  }
-
-  function storeCtaLabel(m, subStatus) {
-    if (subStatus === 'active') return 'Module actif';
-    if (subStatus === 'requested') return 'Demande envoyée';
-    if (subStatus === 'approved') return 'En attente de paiement';
-    if (subStatus === 'suspended') return 'Suspendu';
-    if (m.status === 'coming_soon') return 'Bientôt disponible';
-    if (m.status === 'quote') return 'Sur devis';
-    if (m.status === 'premium_reserved') return 'Réservé';
-    return "Demander l'activation";
-  }
-
-  function storeCard(m, sub) {
-    const subStatus = sub?.status;
-    const canRequest =
-      ['available', 'beta'].includes(m.status) &&
-      !['requested', 'approved', 'active'].includes(subStatus);
-    return `
-      <article class="store-card">
-        <div class="store-card-head">
-          <h3>${escapeHtml(m.name)}</h3>
-          ${badge(m.status)}
-        </div>
-        <p class="store-card-cat">${escapeHtml(m.category || '')}</p>
-        <p class="store-card-desc">${escapeHtml(m.description || '')}</p>
-        <div class="store-card-foot">
-          <span class="store-price">${escapeHtml(storePriceLabel(m))}</span>
-          <button type="button" class="btn ${canRequest ? 'primary-action' : 'secondary-btn'}" data-action="store-request" data-id="${m.id}"${canRequest ? '' : ' disabled'}>${escapeHtml(storeCtaLabel(m, subStatus))}</button>
-        </div>
-      </article>`;
-  }
-
-  function renderStoreCatalog() {
-    const grid = $('#storeCatalog');
-    if (!grid) return;
-    const modules = storeCache.modules || [];
-    const subByModule = {};
-    (storeCache.subs || []).forEach((s) => {
-      subByModule[s.module_id] = s;
-    });
-
-    const searchEl = document.querySelector('[data-search="store"]');
-    const catEl = document.querySelector('[data-filter="store"]');
-    const q = normalize(searchEl?.value || '');
-    const cat = catEl?.value || 'all';
-
-    const filtered = modules.filter((m) => {
-      const matchCat = cat === 'all' || m.category === cat;
-      if (!q) return matchCat;
-      const hay = normalize(`${m.name} ${m.description || ''} ${m.category || ''}`);
-      return matchCat && hay.includes(q);
-    });
-
-    grid.innerHTML = filtered.length === 0
-      ? `<p class="store-empty">Aucun module ne correspond à votre recherche.</p>`
-      : filtered.map((m) => storeCard(m, subByModule[m.id])).join('');
-  }
-
-  function renderStoreSubs() {
-    const modules = storeCache.modules || [];
-    const nameOf = (id) => modules.find((m) => m.id === id)?.name || '—';
-    const subs = storeCache.subs || [];
-    const active = subs.filter((s) => s.status === 'active');
-    const pending = subs.filter((s) => ['requested', 'approved'].includes(s.status));
-
-    const activeEl = $('#storeActive');
-    if (activeEl) {
-      activeEl.innerHTML = active.length
-        ? active.map((s) => `<li class="store-sub-item"><span>${escapeHtml(nameOf(s.module_id))}</span>${badge(s.status)}</li>`).join('')
-        : '<li class="store-sub-empty">Aucun module actif pour le moment.</li>';
-    }
-    const pendingEl = $('#storePending');
-    if (pendingEl) {
-      pendingEl.innerHTML = pending.length
-        ? pending.map((s) => `<li class="store-sub-item"><span>${escapeHtml(nameOf(s.module_id))}</span>${badge(s.status)}</li>`).join('')
-        : '<li class="store-sub-empty">Aucune demande en attente.</li>';
-    }
-  }
-
-  async function renderStore(session) {
-    const [modules, subs] = await Promise.all([
-      window.PweApi.fetchStoreModules(),
-      window.PweApi.fetchStoreSubscriptions(session.schoolId),
-    ]);
-    storeCache.modules = modules;
-    storeCache.subs = subs;
-    renderStoreCatalog();
-    renderStoreSubs();
-  }
-
-  async function renderHomework(session) {
-    const active = await window.PweApi.isModuleActive(session.schoolId, 'homework');
-    $('#homeworkLocked')?.classList.toggle('hidden', active);
-    $('#homeworkContent')?.classList.toggle('hidden', !active);
-    $('#homeworkAddBtn')?.classList.toggle('hidden', !active);
-    if (!active) return;
-
-    const list = await window.PweApi.fetchHomework(session.schoolId);
-    homeworkCache = list;
-    const rows = list.filter((h) => h.status !== 'archived');
-    $('#homeworkTable').innerHTML = rows.length === 0
-      ? `<tr class="empty-row"><td colspan="5">Aucun devoir actif. Cliquez sur « Ajouter un devoir ».</td></tr>`
-      : rows.map((h) => `
-          <tr>
-            <td><strong>${escapeHtml(h.title)}</strong>${h.instructions ? `<div class="hw-instr">${escapeHtml(h.instructions)}</div>` : ''}</td>
-            <td>${escapeHtml(h.subject)}</td>
-            <td>${escapeHtml(h.class)}</td>
-            <td>${escapeHtml(h.due)}</td>
-            <td>
-              <div class="row-actions">
-                <button type="button" class="row-action-btn row-action-btn--accent" data-action="homework-track" data-id="${h.id}" title="Suivi des élèves" aria-label="Suivi des élèves">
-                  <svg aria-hidden="true" width="14" height="14"><use href="#i-users"></use></svg>
-                </button>
-                <button type="button" class="row-action-btn" data-action="archive-homework" data-id="${h.id}" title="Archiver" aria-label="Archiver">
-                  <svg aria-hidden="true" width="14" height="14"><use href="#i-archive"></use></svg>
-                </button>
-              </div>
-            </td>
-          </tr>`).join('');
-  }
-
-  const RENDERERS = {
-    dashboard: renderDashboard,
-    statistics: renderStatistics,
-    profile: renderProfile,
-    classes: renderClasses,
-    students: renderStudents,
-    teachers: renderTeachers,
-    reports: renderReports,
-    fees: renderFees,
-    messages: renderMessages,
-    homework: renderHomework,
-    store: renderStore,
-    settings: renderSettings,
-  };
 
   async function updateChrome(session) {
     const profile = await ensureSchoolProfile(session);
@@ -1993,6 +1003,12 @@
     $('#topbarRole').textContent = roleLabel;
     const roleMobile = $('#topbarRoleMobile');
     if (roleMobile) roleMobile.textContent = roleLabel;
+    const hint = roleHint(session.role);
+    const hintEl = $('#topbarRoleHint');
+    if (hintEl) {
+      hintEl.textContent = hint || '';
+      hintEl.classList.toggle('hidden', !hint);
+    }
     $('#userMenuName').textContent = `${schoolName} ${roleLabel}`;
     const codeEl = $('#userMenuCode');
     if (codeEl) codeEl.textContent = schoolCode;
@@ -2025,13 +1041,19 @@
       }
     }
     renderSchoolSwitcher(schools, session.schoolId);
+    applyNavPermissions(session);
   }
 
   async function navigate(route) {
     const session = getSession();
     if (!session) return;
 
-    const r = ROUTES.includes(route) ? route : 'dashboard';
+    ensureSchoolCache(session.schoolId);
+    const requested = ROUTES.includes(route) ? route : 'dashboard';
+    const r = resolveRoute(requested, session.role);
+    if (r !== requested) {
+      safeToast('Accès limité', roleHint(session.role) || 'Cette section n’est pas disponible pour votre rôle.');
+    }
 
     $$('.view').forEach((v) => v.classList.remove('active'));
     const view = $(`#view-${r}`);
@@ -2051,12 +1073,14 @@
     syncSchoolDrawerNavActive(r);
 
     try {
-      if (RENDERERS[r]) await RENDERERS[r](session);
+      if (getRenderers()[r]) await getRenderers()[r](session);
     } catch (err) {
       showLoadError(err);
       loginError.textContent = err.message || 'Erreur de chargement des données.';
       loginError.classList.remove('hidden');
     }
+
+    applyNavPermissions(session);
 
     if (location.hash !== `#${r}`) {
       history.replaceState(null, '', `#${r}`);
@@ -2228,7 +1252,7 @@
     tab.addEventListener('click', () => {
       const mode = setProfileMode(tab.dataset.profileMode);
       syncSchoolDrawerTabs(mode);
-      renderSchoolDrawerNav(mode);
+      renderSchoolDrawerNav(mode, getSession()?.role);
       syncAppHeaderProfileMode(mode);
     });
   });
@@ -2252,11 +1276,11 @@
   $$('[data-search], [data-filter]').forEach((el) => {
     el.addEventListener('input', () => {
       const route = (location.hash || '#dashboard').slice(1);
-      if (RENDERERS[route]) navigate(route);
+      if (getRenderers()[route]) navigate(route);
     });
     el.addEventListener('change', () => {
       const route = (location.hash || '#dashboard').slice(1);
-      if (RENDERERS[route]) navigate(route);
+      if (getRenderers()[route]) navigate(route);
     });
   });
 
@@ -2340,6 +1364,10 @@
       if (form?.academicYear && !form.academicYear.value && topYear && topYear !== '—') {
         form.academicYear.value = topYear;
       }
+      const gradesList = document.getElementById('reportGradesList');
+      if (gradesList && gradesList.childElementCount === 0) {
+        gradesList.appendChild(makeGradeRow());
+      }
       openModal('modalAddReport');
       return;
     }
@@ -2354,8 +1382,23 @@
     }
 
     if (action === 'compose-message') {
-      if (!requireWritableMode()) return;
+      if (!requireWritableMode('send_messages')) return;
       openModal('modalComposeMessage');
+      return;
+    }
+
+    if (action === 'reply-message') {
+      if (!requireWritableMode('send_messages')) return;
+      const msg = (listCache.messages || []).find((m) => m.id === selectedMessageId);
+      if (!msg?.id) {
+        safeToast('Sélectionnez un message', 'Choisissez une annonce dans la liste.');
+        return;
+      }
+      const idInput = document.getElementById('replyAnnouncementId');
+      const sub = document.getElementById('replyMessageSubtitle');
+      if (idInput) idInput.value = msg.id;
+      if (sub) sub.textContent = `Réponse à : ${msg.subject || 'ce message'}`;
+      openModal('modalReplyMessage');
       return;
     }
 
@@ -2476,6 +1519,16 @@
   }
 
   function bindActionButtons() {
+    const delegatedActions = new Set([
+      'archive-correspondence',
+      'archive-homework',
+      'homework-track',
+      'store-custom-request',
+      'store-detail',
+      'store-request',
+      'store-request-from-detail',
+    ]);
+
     document.addEventListener('click', (e) => {
       window.PWE_DIAG.lastClick = {
         t: Date.now(),
@@ -2485,8 +1538,10 @@
       };
       const btn = findActionElement(e.target);
       if (!btn) return;
+      const action = btn.getAttribute('data-action');
+      if (delegatedActions.has(action)) return;
       e.preventDefault();
-      dispatchAction(btn.getAttribute('data-action'), {
+      dispatchAction(action, {
         id: btn.getAttribute('data-id'),
       });
     });
@@ -2723,7 +1778,7 @@
       closeModals();
       form.reset();
       safeToast('Devoir créé', 'Le devoir a été ajouté pour votre école.');
-      await renderHomework(session);
+      await getRenderers().homework(session);
     } finally {
       setFormBusy(form, false);
     }
@@ -2735,13 +1790,13 @@
     if (!requireWritableMode()) return;
     const session = getSession();
     if (!session) return;
-    const result = await window.PweApi.archiveHomework(btn.dataset.id);
+    const result = await window.PweApi.archiveHomework(btn.dataset.id, session.schoolId);
     if (!result.ok) {
       safeToast('Archivage impossible', result.error || 'Erreur.');
       return;
     }
     safeToast('Devoir archivé', null);
-    await renderHomework(session);
+    await getRenderers().homework(session);
   });
 
   // Devoirs — ouverture du suivi des élèves.
@@ -2820,29 +1875,82 @@
     }
   });
 
-  // WalahaStore — ouverture de la demande d'activation.
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action="store-request"]');
-    if (!btn || btn.disabled) return;
-    storeRequestModuleId = btn.dataset.id;
-    const module = (storeCache.modules || []).find((m) => m.id === storeRequestModuleId);
-    const nameEl = document.getElementById('storeRequestModuleName');
-    if (nameEl) nameEl.textContent = module?.name || 'ce module';
-    openModal('modalStoreRequest');
+  // Carnet de correspondance — créer / archiver.
+  document.getElementById('corrAddBtn')?.addEventListener('click', async () => {
+    if (!requireWritableMode('correspondence')) return;
+    const session = getSession();
+    if (!session) return;
+    const sel = document.getElementById('corrStudentSelect');
+    if (sel) {
+      const students = await window.PweApi.fetchStudentsForSelect(session.schoolId);
+      sel.innerHTML =
+        '<option value="">Choisir un élève…</option>' +
+        (students || []).map((s) => `<option value="${s.id}">${escapeHtml(s.label)}</option>`).join('');
+    }
+    openModal('modalAddCorrespondence');
   });
 
-  document.querySelector('[data-search="store"]')?.addEventListener('input', renderStoreCatalog);
-  document.querySelector('[data-filter="store"]')?.addEventListener('change', renderStoreCatalog);
+  document.getElementById('addCorrespondenceForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!requireWritableMode()) return;
+    const session = getSession();
+    if (!session) return;
+    const form = e.target;
+    setFormBusy(form, true);
+    const fd = new FormData(form);
+    try {
+      const result = await window.PweApi.createCorrespondence({
+        schoolId: session.schoolId,
+        studentId: fd.get('studentId'),
+        entryType: fd.get('entryType'),
+        subject: fd.get('subject'),
+        content: fd.get('content'),
+        period: fd.get('period'),
+      });
+      if (!result.ok) {
+        safeToast('Création impossible', result.error || 'Erreur.');
+        return;
+      }
+      closeModals();
+      form.reset();
+      safeToast('Entrée ajoutée', 'L’entrée du carnet a été enregistrée.');
+      await getRenderers().correspondence(session);
+    } finally {
+      setFormBusy(form, false);
+    }
+  });
 
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action="archive-correspondence"]');
+    if (!btn) return;
+    if (!requireWritableMode()) return;
+    const session = getSession();
+    if (!session) return;
+    const result = await window.PweApi.archiveCorrespondence(btn.dataset.id, session.schoolId);
+    if (!result.ok) {
+      safeToast('Archivage impossible', result.error || 'Erreur.');
+      return;
+    }
+    safeToast('Entrée archivée', null);
+    await getRenderers().correspondence(session);
+  });
+
+  // WalahaStore — délégué au module pwe-store.js
   document.addEventListener('click', (e) => {
+    if (window.PweStore.handleClick(e, { closeModals })) return;
     if (e.target.closest('[data-action="store-custom-request"]')) {
+      if (!requireWritableMode('manage_store')) return;
       openModal('modalCustomRequest');
     }
   });
 
+  document.querySelector('[data-search="store"]')?.addEventListener('input', () => {
+    window.PweStore.renderCatalog();
+  });
+
   document.getElementById('customRequestForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!requireWritableMode()) return;
+    if (!requireWritableMode('manage_store')) return;
     const session = getSession();
     if (!session) return;
     const form = e.target;
@@ -2868,14 +1976,14 @@
 
   document.getElementById('storeRequestForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!requireWritableMode()) return;
+    if (!requireWritableMode('manage_store')) return;
     const session = getSession();
     if (!session) return;
     const form = e.target;
     setFormBusy(form, true);
     try {
       const result = await window.PweApi.requestModuleActivation({
-        moduleId: storeRequestModuleId,
+        moduleId: window.PweStore.getRequestModuleId(),
         schoolId: session.schoolId,
         note: new FormData(form).get('note'),
       });
@@ -2886,8 +1994,33 @@
       closeModals();
       form.reset();
       safeToast('Demande envoyée', "La Walaha Team va étudier votre demande d'activation.");
-      storeCache.subs = null;
-      await renderStore(session);
+      window.PweStore.invalidateCache();
+      await getRenderers().store(session);
+    } finally {
+      setFormBusy(form, false);
+    }
+  });
+
+  document.getElementById('replyMessageForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!requireWritableMode('send_messages')) return;
+    const form = e.target;
+    setFormBusy(form, true);
+    const fd = new FormData(form);
+    try {
+      const result = await window.PweApi.createAnnouncementReply({
+        announcementId: fd.get('announcementId'),
+        body: fd.get('body'),
+      });
+      if (!result.ok) {
+        safeToast('Réponse impossible', result.error || 'Erreur.');
+        return;
+      }
+      closeModals();
+      form.reset();
+      safeToast('Réponse envoyée', 'Le fil de discussion a été mis à jour.');
+      const msg = (listCache.messages || []).find((m) => m.id === selectedMessageId);
+      if (msg) await showMessagePreview(msg);
     } finally {
       setFormBusy(form, false);
     }
@@ -3011,6 +2144,40 @@
     }
   });
 
+  function makeGradeRow() {
+    const row = document.createElement('div');
+    row.className = 'report-grade-row';
+    row.innerHTML = [
+      '<input class="grade-subject" placeholder="Matière" aria-label="Matière" />',
+      '<input class="grade-value" type="number" step="0.01" min="0" max="20" placeholder="Note /20" aria-label="Note" />',
+      '<input class="grade-coef" type="number" step="0.5" min="0" placeholder="Coef" aria-label="Coefficient" />',
+      '<button type="button" class="icon-btn grade-remove" aria-label="Retirer la matière">×</button>',
+    ].join('');
+    row.querySelector('.grade-remove')?.addEventListener('click', () => row.remove());
+    return row;
+  }
+
+  function resetReportGrades() {
+    const list = document.getElementById('reportGradesList');
+    if (list) list.replaceChildren();
+  }
+
+  function readReportGrades() {
+    const list = document.getElementById('reportGradesList');
+    if (!list) return [];
+    return [...list.querySelectorAll('.report-grade-row')]
+      .map((row) => ({
+        subject: row.querySelector('.grade-subject')?.value || '',
+        grade: row.querySelector('.grade-value')?.value || '',
+        coefficient: row.querySelector('.grade-coef')?.value || '',
+      }))
+      .filter((g) => g.subject.trim() !== '');
+  }
+
+  document.getElementById('reportAddGradeBtn')?.addEventListener('click', () => {
+    document.getElementById('reportGradesList')?.appendChild(makeGradeRow());
+  });
+
   document.getElementById('addReportForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!requireWritableMode()) return;
@@ -3027,6 +2194,7 @@
         average: fd.get('average'),
         appreciation: fd.get('appreciation'),
         status: fd.get('status'),
+        grades: readReportGrades(),
       });
       if (!result.ok) {
         safeToast('Création impossible', result.error || 'Erreur.');
@@ -3034,6 +2202,7 @@
       }
       closeModals();
       form.reset();
+      resetReportGrades();
       safeToast('Bulletin créé', 'Le bulletin apparaît dans la liste.');
       await refreshReports(session);
       navigate('reports');
@@ -3074,7 +2243,7 @@
 
   document.getElementById('composeMessageForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!requireWritableMode()) return;
+    if (!requireWritableMode('send_messages')) return;
     const session = getSession();
     if (!session) return;
     const form = e.target;
@@ -3251,6 +2420,25 @@
     updateSearchKbd();
 
     const mode = window.PweApi.init();
+    window.PweModals.init({ ensureSchoolProfile });
+    window.PweRenderers.init({
+      navigate,
+      dispatchAction,
+      ensureSchoolCache,
+      ensureSchoolProfile,
+      applySchoolBranding,
+      syncThemeControls,
+      filterRows,
+      rowActions,
+      getSession,
+      getListCache: () => listCache,
+      getSelectedMessageId: () => selectedMessageId,
+      setSelectedMessageId: (v) => {
+        selectedMessageId = v;
+      },
+      BUILD,
+    });
+    window.PweStore.init({ openModal });
     console.info(`[PWE] build=${BUILD} mode=${mode}`);
     updateLoginUi(mode);
 
